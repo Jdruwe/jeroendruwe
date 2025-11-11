@@ -1,0 +1,44 @@
+---
+// todo: header & footer
+// import Header from '../components/Header.astro';
+// import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+import {cn} from "@/lib/utils.ts";
+const { pageTitle, class: className } = Astro.props
+---
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+    <meta name="viewport" content="width=device-width"/>
+    <meta name="generator" content={Astro.generator}/>
+    <title>{pageTitle}</title>
+</head>
+<body>
+<!--<Header />-->
+<!--<h1>{pageTitle}</h1>-->
+<!--<slot/>-->
+<!--<Footer />-->
+
+<div class="flex h-fit min-h-screen flex-col gap-y-6 font-sans">
+    <div
+            class="bg-background/50 sticky top-0 z-50 divide-y backdrop-blur-sm xl:divide-none"
+    >
+        <!--<Header />-->
+        <slot name="subposts-navigation"/>
+        <slot name="table-of-contents"/>
+    </div>
+    <main class="grow">
+        <div class={cn('mx-auto flex grow flex-col gap-y-6 px-4', className)}>
+            <slot />
+        </div>
+        <!--<div class={cn('mx-auto flex grow flex-col gap-y-6 px-4', className)}>-->
+        <!--    <slot />-->
+        <!--</div>-->
+    </main>
+    <!--<Footer />-->
+</div>
+
+
+</body>
+</html>
