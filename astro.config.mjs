@@ -1,18 +1,26 @@
 // @ts-check
-import { defineConfig } from "astro/config";
+import { defineConfig } from 'astro/config';
 
-import cloudflare from "@astrojs/cloudflare";
+import cloudflare from '@astrojs/cloudflare';
 
-import tailwindcss from "@tailwindcss/vite";
+import tailwindcss from '@tailwindcss/vite';
 
-import react from "@astrojs/react";
+import react from '@astrojs/react';
+
+import mdx from '@astrojs/mdx';
+import { remarkReadingTime } from './remark-reading-time.mjs';
 
 // https://astro.build/config
 export default defineConfig({
   adapter: cloudflare(),
   vite: {
     plugins: [tailwindcss()],
+    ssr: {
+      noExternal: ['use-sound'],
+    },
   },
-
-  integrations: [react()],
+  integrations: [react(), mdx()],
+  markdown: {
+    remarkPlugins: [remarkReadingTime],
+  },
 });

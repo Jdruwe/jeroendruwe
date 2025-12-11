@@ -1,6 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
-import MarkdownPostLayout from '../../layouts/MarkdownPostLayout.astro';
+import Layout from '../../layouts/Layout.astro';
+import { formatDate } from '@/lib/utils.ts';
+import { ClockIcon, CalendarIcon } from '@lucide/astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -11,12 +13,22 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, remarkPluginFrontmatter } = await render(post);
 ---
 
-<MarkdownPostLayout frontmatter={post.data} class="max-w-4xl">
+<Layout class="max-w-4xl">
+  <section class="flex flex-col gap-y-1">
+    <h1 class="leading-thight text-3xl font-medium">
+      {post.data.title}
+    </h1>
+    <div class="text-muted-foreground divide-border flex divide-x text-sm">
+      <div class="flex items-center gap-x-1.5 pr-2">
+        <CalendarIcon class="size-3" />{formatDate(post.data.pubDate)}
+      </div>
+      <div class="flex items-center gap-x-1.5 pl-2">
+        <ClockIcon class="size-3" />{remarkPluginFrontmatter.minutesRead}
+      </div>
+    </div>
+  </section>
   <Content />
-</MarkdownPostLayout>
-<!--<MarkdownPostLayout frontmatter={post.data}>-->
-<!--  <Content />-->
-<!--</MarkdownPostLayout>-->
+</Layout>
