@@ -10,6 +10,8 @@ import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
 import { remarkReadingTime } from './remark-reading-time.mjs';
 
+import expressiveCode from 'astro-expressive-code';
+
 // https://astro.build/config
 export default defineConfig({
   adapter: cloudflare(),
@@ -19,7 +21,16 @@ export default defineConfig({
       noExternal: ['use-sound'],
     },
   },
-  integrations: [react(), mdx()],
+  integrations: [
+    react(),
+    expressiveCode({
+      themes: ['github-light', 'github-dark'],
+      themeCssSelector: (theme) =>
+        theme.name === 'github-dark' ? '.dark' : ':root:not(.dark)',
+      useDarkModeMediaQuery: false,
+    }),
+    mdx(),
+  ],
   markdown: {
     remarkPlugins: [remarkReadingTime],
   },

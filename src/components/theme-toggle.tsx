@@ -31,10 +31,6 @@ const ThemeToggle = () => {
     }
   };
 
-  /**
-   * TODO's:
-   * - use https://www.npmjs.com/package/use-sound
-   */
   return (
     <Button
       variant="ghost"
