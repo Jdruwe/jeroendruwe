@@ -14,6 +14,7 @@ const blog = defineCollection({
       alt: z.string(),
     }),
     tags: z.array(z.string()),
+    draft: z.boolean().optional(),
   }),
 });
 export const collections = { blog };

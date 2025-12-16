@@ -1,14 +1,19 @@
 ---
 import SocialIcons from '@/components/SocialIcons.astro';
+import { HeartIcon } from '@lucide/astro';
 ---
 
 <footer
-  class="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-y-2 px-4 py-4 sm:flex-row sm:justify-between"
+  class="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-y-4 px-4 py-4 sm:flex-row sm:justify-between"
 >
-  <div class="flex flex-wrap items-center gap-x-2">
-    <span class="text-muted-foreground text-sm">
-      &copy; {new Date().getFullYear()} Jeroen Druwé. All rights reserved.
-    </span>
-  </div>
+  <p class="text-muted-foreground flex items-center gap-x-1 text-sm">
+    Built with
+    <HeartIcon
+      class="dark:text-muted-foreground inline text-red-500 transition-transform hover:scale-125"
+      role="img"
+      aria-label="love"
+      size="14"
+    /> by Jeroen Druwé
+  </p>
   <SocialIcons />
 </footer>
