@@ -1,7 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import Link from '@/components/Link.astro';
-import { formatDate } from '@/lib/utils.ts';
+import { formatDateLong, formatDateISO } from '@/lib/utils.ts';
 import { ArrowRightIcon } from '@lucide/astro';
 
 interface Props {
@@ -17,8 +17,8 @@ const { entry } = Astro.props;
   </Link>
   <time
     class="text-muted-foreground text-sm"
-    datetime={entry.data.pubDate.toISOString()}
-    >{formatDate(entry.data.pubDate)}</time
+    datetime={formatDateISO(entry.data.pubDate)}
+    >{formatDateLong(entry.data.pubDate)}</time
   >
   <p>{entry.data.description}</p>
   <Link

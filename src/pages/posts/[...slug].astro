@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
-import { formatDate } from '@/lib/utils.ts';
+import { formatDateLong } from '@/lib/utils.ts';
 import { ClockIcon, CalendarIcon } from '@lucide/astro';
 
 export async function getStaticPaths() {
@@ -23,7 +23,7 @@ const { Content, remarkPluginFrontmatter } = await render(post);
     </h1>
     <div class="text-muted-foreground divide-border flex divide-x text-sm">
       <div class="flex items-center gap-x-1.5 pr-2">
-        <CalendarIcon class="size-3" />{formatDate(post.data.pubDate)}
+        <CalendarIcon class="size-3" />{formatDateLong(post.data.pubDate)}
       </div>
       <div class="flex items-center gap-x-1.5 pl-2">
         <ClockIcon class="size-3" />{remarkPluginFrontmatter.minutesRead}

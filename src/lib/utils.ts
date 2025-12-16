@@ -5,7 +5,7 @@ const cn = (...inputs: ClassValue[]) => {
   return twMerge(clsx(inputs));
 };
 
-const formatDate = (date: Date) => {
+const formatDateLong = (date: Date) => {
   return Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'long',
@@ -13,4 +13,8 @@ const formatDate = (date: Date) => {
   }).format(date);
 };
 
-export { cn, formatDate };
+const formatDateISO = (date: Date) => {
+  return date.toISOString().split('T')[0];
+};
+
+export { cn, formatDateLong, formatDateISO };
