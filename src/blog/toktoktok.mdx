@@ -28,17 +28,8 @@ this is a `test` hello!
 
 > this is a blockquote
 
-````mdx showLineNumbers=false collapse={3-11}
-<Callout title="About Github-flavored alerts" variant="important">
-  I know that Github typically uses the following syntax for "alerts" (which is what they call these callouts, you can see their documentation [here](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts)):
-  ```md showLineNumbers=false
-  > [!NOTE]
-  > Useful information that users should know, even when skimming content.
+To use the `Prism` highlighter component, you must install the `@astrojs/prism` package:
+
+```shell
+  pnpm add @astrojs/prism
   ```
-  The above syntax is supposed to render like this:
-  <Callout>
-    Useful information that users should know, even when skimming content.
-  </Callout>
-  I believe they do this so they can keep you within the Markdown-like syntax system. However, since this is MDX, I thought we'd be better off just using the component paradigm since it's a bit impractical to make a rehype plugin that can parse this form of syntax (also, solutions for this already exist, such as [lin-stephanie/rehype-callouts](https://github.com/lin-stephanie/rehype-callouts)). Additionally, I find it a pain to work with the `>{:md}` (the `<blockquote>{:html}` indicators for Markdown) syntax, as it makes it difficult to nest things such as code blocks within them in pure Markdown. We'll use components for now!
-</Callout>
-````
