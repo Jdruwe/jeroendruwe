@@ -1,0 +1,35 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Link from '@/components/Link.astro';
+import { formatDate } from '@/lib/utils.ts';
+import { ArrowRightIcon } from '@lucide/astro';
+
+interface Props {
+  entry: CollectionEntry<'posts'>;
+}
+
+const { entry } = Astro.props;
+---
+
+<div class="flex flex-col gap-y-2">
+  <Link href={`/${entry.collection}/${entry.id}`} underline class="w-fit">
+    <h3 class="mb-1 text-xl font-bold">{entry.data.title}</h3>
+  </Link>
+  <time
+    class="text-muted-foreground text-sm"
+    datetime={entry.data.pubDate.toISOString()}
+    >{formatDate(entry.data.pubDate)}</time
+  >
+  <p>{entry.data.description}</p>
+  <Link
+    href={`/${entry.collection}/${entry.id}`}
+    underline
+    class="group flex w-fit items-center gap-x-1 text-sm"
+    tabindex="-1"
+  >
+    Read more <ArrowRightIcon
+      class="text-muted-foreground hidden group-hover:inline"
+      size="16"
+    /></Link
+  >
+</div>
