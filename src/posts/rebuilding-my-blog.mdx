@@ -1,0 +1,55 @@
+---
+title: "Rebuilding My Blog (Again): Why Astro Finally Stuck"
+pubDate: 2022-07-01
+description: "After multiple rebuilds using Ghost and Gatsby, I rebuilt my blog with Astro and MDX. This setup makes writing faster, allows interactive JavaScript components in posts, and reduces friction while keeping content and code together."
+tags: ["astro", "blogging", "learning in public"]
+---
+
+If you’ve been building on the web for a while, you probably know the feeling: your blog works fine, until it doesn’t feel like *yours* anymore. That’s exactly where I found myself recently, which led to yet another rebuild of my personal blog, this time using [Astro](https://astro.build/).
+
+This isn’t my first rodeo. Before Astro, I ran the same blog on [Ghost](https://ghost.org/), and later rebuilt it with [Gatsby](https://www.gatsbyjs.com/) using [Prismic](https://prismic.io/) as a CMS. Each setup worked, and each taught me something, but they also came with friction that slowly pushed me toward something simpler.
+
+This post is a quick write-up of *why* I switched, what improved, and why Astro with [MDX](https://mdxjs.com/) feels like the right long-term home for my blog.
+
+## The CMS Fatigue Is Real
+
+CMS-driven blogs are powerful. There’s no denying that. Ghost gave me a clean writing experience and a batteries-included setup. Gatsby with Prismic gave me flexibility, a modern stack, and room to grow.
+
+Over time, I noticed a pattern:
+
+* Writing a post required context-switching into a CMS UI
+* Content lived elsewhere, not next to my code
+* Small changes required mental overhead, like schemas, fields, and previews
+* Faster ideas didn’t always turn into posts
+
+None of these are deal-breakers on their own. Together, they created enough friction that writing felt heavier than it needed to be, especially for a blog focused on software notes, experiments, and things I learn along the way.
+
+## Astro’s Mental Model
+
+Astro feels opinionated in the right places and invisible in others. What stood out immediately was how little it asked of me.
+
+No complex data layer.
+No client-side JavaScript by default.
+No “framework tax” unless I explicitly opt in.
+
+Astro lets me treat my blog like what it really is: mostly content that loads fast, performs well, and is easy to reason about. I always know what runs on the server, what runs on the client, and why. That clarity alone makes the development experience enjoyable.
+
+## MDX: Writing as Code
+
+The real turning point was switching to **MDX**.
+
+Instead of writing content inside a CMS, my posts now live as `.mdx` files directly in the repo. That alone sped things up. The real unlock is that I can embed **JavaScript components directly in markdown**, giving me flexibility to enhance posts when needed.
+
+This allows me to:
+
+* Include interactive demos or tools where they add real value
+* Use reusable callouts, diagrams, or components consistently
+* Keep code examples clean and readable
+* Update design elements without changing old posts
+
+All of this happens without leaving my editor. No admin panels, no syncing issues, and no “where did this content live again?” moments. Writing feels closer to coding now, which is perfect for a developer blog.
+
+## Is This the Final Rebuild?
+
+I’m not claiming this is the *final* version of my blog. Experience says that’s never true. But this is the first setup in a while that feels sustainable.
+Astro didn’t just help me rebuild my blog. It removed enough friction that I actually want to keep writing again. Honestly, that’s the most important feature of all.
