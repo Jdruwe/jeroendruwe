@@ -8,8 +8,6 @@ const ThemeToggle = () => {
   const [playOn] = useSound('/sounds/switch-on.mp3');
   const [playOff] = useSound('/sounds/switch-off.mp3');
 
-  console.log('DERP');
-
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
     setTheme(isDarkMode ? 'dark' : 'light');

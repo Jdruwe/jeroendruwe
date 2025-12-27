@@ -2,15 +2,15 @@
 import Layout from '../layouts/Layout.astro';
 import { getRecentPosts } from '@/lib/collection-utils.ts';
 import PostEntry from '@/components/PostEntry.astro';
-import { PencilIcon } from '@lucide/astro';
+import { PencilLineIcon } from '@lucide/astro';
 
 const recentPosts = await getRecentPosts();
 ---
 
 <Layout class="max-w-4xl">
   <section class="flex flex-col gap-y-8">
-    <h2 class="flex items-center gap-x-2 text-2xl font-medium">
-      <PencilIcon class="inline" /> Recent posts
+    <h2 class="flex items-center gap-x-2 text-xl font-medium">
+      <PencilLineIcon class="inline" /> Recent posts
     </h2>
     <ul class="flex flex-col gap-y-6">
       {

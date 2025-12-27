@@ -1,11 +1,22 @@
 ---
 import { ThemeToggle } from '@/components/theme-toggle.tsx';
+import { Interests } from '@/components/interests.tsx';
+import Link from './Link.astro';
 ---
 
 <header
   transition:persist
   class="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3"
 >
-  <span class="text-2xl leading-none font-semibold">Jeroen Druwé</span>
+  <Link href="/" class="flex flex-col gap-y-1">
+    <span
+      class="text-logo-foreground flex flex-col text-xl leading-none font-semibold"
+    >
+      Jeroen Druwé
+    </span>
+    <span class="text-muted-foreground text-sm"
+      >Writing code, practicing scales, and racking up virtual miles.</span
+    >
+  </Link>
   <ThemeToggle client:load />
 </header>
