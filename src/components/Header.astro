@@ -7,15 +7,11 @@ import Link from './Link.astro';
   transition:persist
   class="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3"
 >
-  <Link href="/" class="flex flex-col gap-y-1">
-    <span
-      class="text-logo-foreground flex flex-col text-xl leading-none font-semibold"
-    >
-      Jeroen Druwé
-    </span>
-    <span class="text-muted-foreground line-clamp-1 hidden text-sm sm:inline"
-      >Writing code, practicing scales, and racking up virtual miles.</span
-    >
+  <Link
+    href="/"
+    class="text-logo-foreground flex flex-col text-xl leading-none font-semibold"
+  >
+    Jeroen Druwé
   </Link>
   <ThemeToggle client:load />
 </header>
