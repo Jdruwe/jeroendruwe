@@ -22,6 +22,7 @@ Over time, I noticed a pattern:
 * Content lived elsewhere, not next to my code
 * Small changes required mental overhead, like schemas, fields, and previews
 * Faster ideas didn’t always turn into posts
+* Vendor lock-in is real. You're tied to their pricing changes and platform updates. Moving to another vendor could take weeks, not just a quick export/import
 
 None of these are deal-breakers on their own. Together, they created enough friction that writing felt heavier than it needed to be, especially for a blog focused on software notes, experiments, and things I learn along the way.
 
@@ -53,15 +54,41 @@ Below, a simple example showcases embedding a React component inside an MDX post
 
 <MdxDemo client:load/>
 
-```mdxjs {6}
+```mdx {8}
 // rebuilding-my-blog-with-astro.mdx
+import {MdxDemo} from "../post-helpers/rebuilding-my-blog-with-astro/mdx-demo.tsx";
+
 ...
 
 All of this happens without leaving my editor...
 
 <MdxDemo client:load/>
+```
 
-...
+`client:load` ensures the component is hydrated on the client side allowing for interactivity.
+
+```tsx
+// mdx-demo.tsx
+<Space className="grid place-items-center">
+  <Dialog>
+    <DialogTrigger asChild>
+      <Button variant="outline">Free Bitcoins 💰</Button>
+    </DialogTrigger>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Never Gonna Give You Up</DialogTitle>
+      </DialogHeader>
+      <iframe
+        className="aspect-video"
+        src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=7B0aWTM2Q9yb2EsQ&autoplay=1&mute=1"
+        title="YouTube video player"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allowFullScreen
+      ></iframe>
+    </DialogContent>
+  </Dialog>
+</Space>
 ```
 
 ## Is This the Final Rebuild?
@@ -70,3 +97,10 @@ I’m not claiming this is the *final* version of my blog. Experience says that�
 setup in a while that feels sustainable.
 Astro didn’t just help me rebuild my blog. It removed enough friction that I actually want to keep writing again.
 Honestly, that’s the most important feature of all.
+
+## Resources
+
+- [Astro docs](https://docs.astro.build/)
+- [MDX docs](https://mdxjs.com/docs/)
+- [astro-erudite](https://github.com/jktrn/astro-erudite) - An Astro template that served as a helpful guide for project structure and Astro-specific concepts like layouts and content collections.
+- [Josh Comeau's personal website](https://www.joshwcomeau.com/) - The first website I encountered using MDX (& Next.js in his case). It's also a great resource for learning all about javascript & CSS, really worth checking out!
