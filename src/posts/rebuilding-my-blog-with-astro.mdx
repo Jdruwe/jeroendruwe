@@ -4,6 +4,7 @@ pubDate: 2022-07-01
 description: "I rebuilt my blog for the third time. Switching to Astro and MDX finally removed the friction that kept me from writing, bringing my content closer to my code and making the whole process feel lighter."
 tags: ["astro", "blogging", "learning in public"]
 ---
+import {MdxDemo} from "../post-helpers/rebuilding-my-blog-with-astro/mdx-demo.tsx";
 
 If you’ve been building on the web for a while, you probably know the feeling: your blog works fine, until it doesn’t feel like *yours* anymore. That’s exactly where I found myself recently, which led to yet another rebuild of my personal blog, this time using [Astro](https://astro.build/).
 
@@ -48,7 +49,24 @@ This allows me to:
 
 All of this happens without leaving my editor. No admin panels, no syncing issues, and no “where did this content live again?” moments. Writing feels closer to coding now, which is perfect for a developer blog.
 
+Below, a simple example showcases embedding a React component inside an MDX post:
+
+<MdxDemo client:load/>
+
+```mdxjs {6}
+// rebuilding-my-blog-with-astro.mdx
+...
+
+All of this happens without leaving my editor...
+
+<MdxDemo client:load/>
+
+...
+```
+
 ## Is This the Final Rebuild?
 
-I’m not claiming this is the *final* version of my blog. Experience says that’s never true. But this is the first setup in a while that feels sustainable.
-Astro didn’t just help me rebuild my blog. It removed enough friction that I actually want to keep writing again. Honestly, that’s the most important feature of all.
+I’m not claiming this is the *final* version of my blog. Experience says that’s never true. But this is the first
+setup in a while that feels sustainable.
+Astro didn’t just help me rebuild my blog. It removed enough friction that I actually want to keep writing again.
+Honestly, that’s the most important feature of all.
