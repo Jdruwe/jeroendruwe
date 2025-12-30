@@ -9,9 +9,11 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^12.6.10",
+    "@astrojs/cloudflare": "^12.6.12",
     "@astrojs/mdx": "^4.3.13",
     "@astrojs/react": "^4.4.2",
+    "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource-variable/geist-mono": "^5.2.7",
     "@fontsource-variable/inter": "^5.2.8",
     "@lucide/astro": "^0.560.0",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -19,7 +21,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "astro": "^5.15.4",
+    "astro": "^5.16.6",
     "astro-expressive-code": "^0.41.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

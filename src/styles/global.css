@@ -4,7 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Inter Variable', sans-serif;
+  /*--font-sans: 'Inter Variable', sans-serif;*/
+  --font-mono: 'Geist Mono Variable', monospace;
+  /*--font-sans: 'Geist Variable', sans-serif;*/
   --font-handwriting: 'Playwrite AU QLD Variable', cursive;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

@@ -3,6 +3,7 @@ import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import { formatDateLong } from '@/lib/utils.ts';
 import { ClockIcon, CalendarIcon } from '@lucide/astro';
+import PostHead from '@/components/PostHead.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
@@ -16,7 +17,8 @@ const { post } = Astro.props;
 const { Content, remarkPluginFrontmatter } = await render(post);
 ---
 
-<Layout class="max-w-4xl">
+<Layout class="max-w-3xl">
+  <PostHead slot="head" post={post} />
   <section class="flex flex-col gap-y-1">
     <h1 class="leading-thight text-3xl font-medium">
       {post.data.title}
@@ -30,7 +32,6 @@ const { Content, remarkPluginFrontmatter } = await render(post);
       </div>
     </div>
   </section>
-  <!--todo: write the actual blog post on toktoktok and see what missing: prose, meta data, rss,...-->
   <article class="prose">
     <Content />
   </article>

@@ -28,6 +28,10 @@ export default defineConfig({
       themeCssSelector: (theme) =>
         theme.name === 'github-dark' ? '.dark' : ':root:not(.dark)',
       useDarkModeMediaQuery: false,
+      styleOverrides: {
+        codeFontFamily: "'Geist Mono Variable', monospace",
+        uiFontFamily: "'Geist Mono Variable', monospace",
+      },
     }),
     mdx(),
   ],

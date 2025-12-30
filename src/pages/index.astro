@@ -7,11 +7,11 @@ import { PencilLineIcon } from '@lucide/astro';
 const recentPosts = await getRecentPosts();
 ---
 
-<Layout class="max-w-4xl">
+<Layout class="max-w-3xl">
   <section class="flex flex-col gap-y-8">
-    <h2 class="flex items-center gap-x-2 text-xl font-medium">
-      <PencilLineIcon class="inline" /> Recent posts
-    </h2>
+    <!--<h2 class="flex items-center gap-x-2 text-xl font-medium">-->
+    <!--  <PencilLineIcon class="inline" /> Recent posts-->
+    <!--</h2>-->
     <ul class="flex flex-col gap-y-6">
       {
         recentPosts.map((post) => (

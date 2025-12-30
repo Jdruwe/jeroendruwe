@@ -1,5 +1,7 @@
 ---
 import '@fontsource-variable/inter';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
 import '../styles/global.css';
 import '../styles/typograhpy.css';
 import { cn } from '@/lib/utils.ts';
@@ -39,9 +41,10 @@ const { class: className } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
+    <slot name="head" />
   </head>
   <body>
-    <div class="flex h-fit min-h-screen flex-col gap-y-6 font-sans">
+    <div class="flex h-fit min-h-screen flex-col gap-y-6 font-mono">
       <div
         class="bg-background/50 sticky top-0 z-50 divide-y border-b backdrop-blur-sm xl:divide-none"
       >
