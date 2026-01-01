@@ -14,11 +14,21 @@ import expressiveCode from 'astro-expressive-code';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://jeroendruwe.druwe-jeroen.workers.dev/',
   adapter: cloudflare(),
   vite: {
     plugins: [tailwindcss()],
     ssr: {
       noExternal: ['use-sound'],
+      external: ['@resvg/resvg-js'],
+    },
+    build: {
+      rollupOptions: {
+        external: ['@resvg/resvg-js'],
+      },
+    },
+    optimizeDeps: {
+      exclude: ['@resvg/resvg-js'],
     },
   },
   integrations: [
