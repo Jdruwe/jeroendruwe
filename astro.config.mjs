@@ -22,11 +22,6 @@ export default defineConfig({
       noExternal: ['use-sound'],
       external: ['@resvg/resvg-js'],
     },
-    build: {
-      rollupOptions: {
-        external: ['@resvg/resvg-js'],
-      },
-    },
     optimizeDeps: {
       exclude: ['@resvg/resvg-js'],
     },
