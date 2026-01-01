@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import { getRecentPosts } from '@/lib/collection-utils.ts';
 import PostEntry from '@/components/PostEntry.astro';
 import face from '../assets/face.jpg';
-import Image from 'astro/components/Image.astro';
+import { Image } from 'astro:assets';
 import { MusicIcon, Music4Icon } from '@lucide/astro';
 
 const recentPosts = await getRecentPosts();
