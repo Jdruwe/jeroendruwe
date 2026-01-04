@@ -1,51 +1,42 @@
 import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
-import path from 'path';
-import fs from 'fs';
+import fs from 'node:fs/promises';
+import type { Post } from '@/types.ts';
 
-async function postOgImage() {
-  const normalFontPath = path.resolve('./src/assets/fonts/og/Roboto-Bold.ttf');
-  // const normalFontPath = path.resolve(
-  //   './src/assets/fonts/og/geist-mono-latin-400-normal.ttf',
-  // );
-  const normalFontBugger = fs.readFileSync(normalFontPath);
+const svgAsPng = (svg: string) => {
+  const resvg = new Resvg(svg);
+  const pngData = resvg.render();
+  return pngData.asPng();
+};
 
-  console.log(normalFontBugger);
-
+const getPostOgImage = async ({ data }: Post) => {
   const svg = await satori(
     <div
       style={{
         color: 'black',
-        fontFamily: 'Roboto',
-        fontWeight: '700',
-        fontSize: 82,
+        fontFamily: 'GeistMono-Regular',
+        fontSize: 60,
+        padding: 20,
       }}
     >
-      hello, world
+      {data.title}
     </div>,
     {
       width: 1200,
       height: 630,
       fonts: [
         {
-          name: 'Roboto',
-          data: normalFontBugger,
-          weight: 700,
+          name: 'GeistMono-Regular',
+          data: await fs.readFile(
+            './src/assets/fonts/og/GeistMono-Regular.ttf',
+          ),
+          style: 'normal',
         },
       ],
     },
   );
 
-  return svg;
-}
+  return svgAsPng(svg);
+};
 
-function svgBufferToPngBuffer(svg: any) {
-  const resvg = new Resvg(svg);
-  const pngData = resvg.render();
-  return pngData.asPng();
-}
-
-export async function generateOgImageForPost() {
-  const svg = await postOgImage();
-  return svgBufferToPngBuffer(svg);
-}
+export { getPostOgImage };

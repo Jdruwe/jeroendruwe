@@ -1,11 +1,11 @@
 ---
-import type { CollectionEntry } from 'astro:content';
 import Link from '@/components/Link.astro';
 import { formatDateLong, formatDateISO } from '@/lib/utils.ts';
 import { ArrowRightIcon } from '@lucide/astro';
+import type { Post } from '@/types.ts';
 
 interface Props {
-  entry: CollectionEntry<'posts'>;
+  entry: Post;
 }
 
 const { entry } = Astro.props;

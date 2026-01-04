@@ -1,23 +1,24 @@
-import { getCollection } from 'astro:content';
-import { generateOgImageForPost } from '@/lib/og-utils.tsx';
+import { getPostOgImage } from '@/lib/og-utils.tsx';
 import { getAllPosts } from '@/lib/collection-utils.ts';
+import type { APIRoute } from 'astro';
+import type { Post } from '@/types.ts';
 
-export async function getStaticPaths() {
+export const getStaticPaths = async () => {
   const posts = await getAllPosts();
 
   return posts.map((post) => ({
     params: { slug: post.id },
-    props: { post },
+    props: post,
   }));
-}
+};
 
-export async function GET({ props }) {
-  const image = await generateOgImageForPost(props);
+export const GET: APIRoute<Post> = async ({ props: post }) => {
+  const image = await getPostOgImage(post);
 
   return new Response(image, {
     headers: { 'Content-Type': 'image/png' },
   });
-}
+};
 
 // Set to true to ensure static generation at build time
 export const prerender = true;
