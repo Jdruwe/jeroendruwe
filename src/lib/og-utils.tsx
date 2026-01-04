@@ -1,25 +1,59 @@
-import { Resvg } from '@resvg/resvg-js';
 import satori from 'satori';
 import fs from 'node:fs/promises';
 import type { Post } from '@/types.ts';
+import { formatDateLong } from '@/lib/utils.ts';
+import sharp from 'sharp';
 
-const svgAsPng = (svg: string) => {
-  const resvg = new Resvg(svg);
-  const pngData = resvg.render();
-  return pngData.asPng();
+const svgAsPng = async (svg: string) => {
+  return await sharp(Buffer.from(svg)).png().toBuffer();
 };
 
 const getPostOgImage = async ({ data }: Post) => {
   const svg = await satori(
     <div
       style={{
-        color: 'black',
-        fontFamily: 'GeistMono-Regular',
-        fontSize: 60,
-        padding: 20,
+        width: '100%',
+        height: '100%',
+        padding: 40,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        background:
+          'radial-gradient(125% 125% at 50% 90%, #fff 40%, #155dfc 100%);',
       }}
     >
-      {data.title}
+      <p
+        style={{
+          fontFamily: 'GeistMono-SemiBold',
+          fontWeight: 600,
+          fontSize: 70,
+          margin: 0,
+        }}
+      >
+        {data.title}
+      </p>
+      <p
+        style={{
+          fontFamily: 'GeistMono-Regular',
+          fontSize: 30,
+          margin: 0,
+          color: '#242424',
+        }}
+      >
+        {formatDateLong(data.pubDate)}
+      </p>
+      <p
+        style={{
+          fontFamily: 'GeistMono-Regular',
+          fontSize: 30,
+          marginTop: 'auto',
+          marginBottom: '0',
+          alignSelf: 'flex-end',
+          color: '#242424',
+        }}
+      >
+        jeroendruwe.be
+      </p>
     </div>,
     {
       width: 1200,
@@ -31,6 +65,13 @@ const getPostOgImage = async ({ data }: Post) => {
             './src/assets/fonts/og/GeistMono-Regular.ttf',
           ),
           style: 'normal',
+        },
+        {
+          name: 'GeistMono-SemiBold',
+          data: await fs.readFile(
+            './src/assets/fonts/og/GeistMono-SemiBold.ttf',
+          ),
+          weight: 600,
         },
       ],
     },

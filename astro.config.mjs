@@ -20,10 +20,6 @@ export default defineConfig({
     plugins: [tailwindcss()],
     ssr: {
       noExternal: ['use-sound'],
-      external: ['@resvg/resvg-js'],
-    },
-    optimizeDeps: {
-      exclude: ['@resvg/resvg-js'],
     },
   },
   integrations: [
