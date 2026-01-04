@@ -26,21 +26,21 @@ const getPostOgImage = async ({ data }: Post) => {
         style={{
           fontFamily: 'GeistMono-SemiBold',
           fontWeight: 600,
-          fontSize: 70,
+          fontSize: 100,
           margin: 0,
         }}
       >
-        {data.title}
+        Jeroen Druwé
       </p>
       <p
         style={{
           fontFamily: 'GeistMono-Regular',
-          fontSize: 30,
+          fontSize: 50,
           margin: 0,
           color: '#242424',
         }}
       >
-        {formatDateLong(data.pubDate)}
+        Code, life, and the occasional random thought.
       </p>
       <p
         style={{

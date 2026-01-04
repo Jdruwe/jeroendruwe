@@ -1,8 +1,7 @@
-// todo: update
 const SITE = {
   title: 'Jeroen Druwé',
   description:
-    'astro-erudite is a opinionated, unstyled blogging template—built with Astro, Tailwind, and shadcn/ui.',
+    'Software developer and tech enthusiast. When not coding, I’m tinkering with smart home tech, playing piano, geocaching, or spending time with family.',
   href: 'https://jeroendruwe.be',
   author: 'Jeroen Druwé',
   locale: 'en-US',
