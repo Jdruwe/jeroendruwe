@@ -1,0 +1,33 @@
+---
+import face from '../assets/face.jpg';
+import { Image } from 'astro:assets';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils.ts';
+
+const faceVariants = cva('bg-border shrink-0 rounded-full border-6', {
+  variants: {
+    size: {
+      small: 'size-10 border-3',
+      base: 'size-36',
+    },
+  },
+  defaultVariants: {
+    size: 'base',
+  },
+});
+
+type FaceVariantProps = VariantProps<typeof faceVariants>;
+
+interface Props extends FaceVariantProps {
+  class?: string;
+}
+
+const { class: className, size = 'base', ...props } = Astro.props;
+---
+
+<Image
+  src={face}
+  alt="Jeroen's face"
+  class={cn(faceVariants({ size }), className)}
+  {...props}
+/>

@@ -1,6 +1,7 @@
 ---
 import { ThemeToggle } from '@/components/theme-toggle.tsx';
 import Link from './Link.astro';
+import Face from '@/components/Face.astro';
 ---
 
 <header
@@ -9,9 +10,10 @@ import Link from './Link.astro';
 >
   <Link
     href="/"
-    class="text-logo-foreground flex flex-col text-xl leading-none font-semibold"
+    class="text-logo-foreground flex items-center gap-x-4 text-xl leading-none font-semibold"
   >
-    Jeroen Druwé
+    <Face class="md:hidden" size="small" />
+    <p>Jeroen Druwé</p>
   </Link>
   <ThemeToggle client:load />
 </header>
