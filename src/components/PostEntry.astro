@@ -13,7 +13,12 @@ const { entry } = Astro.props;
 
 <div class="flex flex-col gap-y-2">
   <Link href={`/${entry.collection}/${entry.id}`} underline class="w-fit">
-    <h3 class="mb-1 text-xl font-semibold">{entry.data.title}</h3>
+    <h3
+      class="mb-1 text-xl font-semibold"
+      transition:name={`post-title-${entry.id}`}
+    >
+      {entry.data.title}
+    </h3>
   </Link>
   <time
     class="text-muted-foreground text-sm"
