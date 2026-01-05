@@ -1,6 +1,8 @@
 ---
 // todo: investigate
 // import { ClientRouter } from 'astro:transitions'
+import { SITE } from '@/consts.ts';
+import Favicons from '@/components/Favicons.astro';
 ---
 
 <head>
@@ -32,18 +34,16 @@
     media="(prefers-color-scheme: light)"
   />
 
-  <!--<link rel="sitemap" href="/sitemap-index.xml" />-->
+  <link rel="sitemap" href="/sitemap-index.xml" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link
+    rel="alternate"
+    type="application/rss+xml"
+    title={SITE.title}
+    href={new URL('rss.xml', Astro.site)}
+  />
 
-  <!--todo: implement-->
-  <!--<link rel="manifest" href="/site.webmanifest" />-->
-  <!--<link-->
-  <!--  rel="alternate"-->
-  <!--  type="application/rss+xml"-->
-  <!--  title={SITE.title}-->
-  <!--  href={new URL('rss.xml', Astro.site)}-->
-  <!--/>-->
-
-  <!--<Favicons />-->
+  <Favicons />
   <!--<ClientRouter />-->
 
   <slot />
