@@ -12,9 +12,11 @@ import { remarkReadingTime } from './remark-reading-time.mjs';
 
 import expressiveCode from 'astro-expressive-code';
 
+import sitemap from '@astrojs/sitemap';
+
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://jeroendruwe.druwe-jeroen.workers.dev/',
+  site: 'https://jeroendruwe.be',
   adapter: cloudflare(),
   vite: {
     plugins: [tailwindcss()],
@@ -35,6 +37,7 @@ export default defineConfig({
       },
     }),
     mdx(),
+    sitemap(),
   ],
   markdown: {
     remarkPlugins: [remarkReadingTime],
