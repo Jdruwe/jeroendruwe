@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import useSound from 'use-sound';
 
 const ThemeToggle = () => {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
   const [playOn] = useSound('/sounds/switch-on.mp3');
   const [playOff] = useSound('/sounds/switch-off.mp3');
 
@@ -14,8 +14,10 @@ const ThemeToggle = () => {
   }, []);
 
   useEffect(() => {
-    const isDarkMode = theme === 'dark';
-    document.documentElement.classList[isDarkMode ? 'add' : 'remove']('dark');
+    if (theme) {
+      const isDarkMode = theme === 'dark';
+      document.documentElement.classList[isDarkMode ? 'add' : 'remove']('dark');
+    }
   }, [theme]);
 
   const toggleTheme = () => {
