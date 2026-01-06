@@ -2,7 +2,8 @@
 import { getCollection, render } from 'astro:content';
 import Layout from '../../../layouts/Layout.astro';
 import { formatDateLong } from '@/lib/utils.ts';
-import { ClockIcon, CalendarIcon } from '@lucide/astro';
+import ClockIcon from '@lucide/astro/icons/clock';
+import CalendarIcon from '@lucide/astro/icons/calendar';
 import PostHead from '@/components/PostHead.astro';
 
 export async function getStaticPaths() {
