@@ -12,5 +12,11 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "routes": [
+    {
+      "pattern": "jeroendruwe.be",
+      "custom_domain": true
+    }
+  ]
 }
