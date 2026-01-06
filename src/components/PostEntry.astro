@@ -12,10 +12,12 @@ interface Props {
 const { entry } = Astro.props;
 ---
 
-<!--transition:name={`post-title-${entry.id}`}-->
 <div class="flex flex-col gap-y-2">
   <Link href={`/${entry.collection}/${entry.id}`} underline class="w-fit">
-    <h3 class="mb-1 text-xl font-semibold">
+    <h3
+      class="mb-1 text-xl font-semibold"
+      transition:name={`post-title-${entry.id}`}
+    >
       {entry.data.title}
     </h3>
   </Link>
@@ -34,6 +36,7 @@ const { entry } = Astro.props;
     Read more <ArrowRightIcon
       class="text-muted-foreground hidden group-hover:inline"
       size="16"
-    /></Link
-  >
+    />
+    <span class="sr-only">{entry.data.title}</span>
+  </Link>
 </div>

@@ -1,7 +1,7 @@
 ---
 import { SITE } from '@/consts.ts';
 import Favicons from '@/components/Favicons.astro';
-// import { ClientRouter } from 'astro:transitions';
+import { ClientRouter } from 'astro:transitions';
 ---
 
 <head>
@@ -43,6 +43,6 @@ import Favicons from '@/components/Favicons.astro';
   />
 
   <Favicons />
-  <!--<ClientRouter />-->
+  <ClientRouter />
   <slot />
 </head>
