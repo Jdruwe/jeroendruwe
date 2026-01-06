@@ -17,13 +17,11 @@ const { post } = Astro.props;
 const { Content, remarkPluginFrontmatter } = await render(post);
 ---
 
+<!--transition:name={`post-title-${post.id}`}-->
 <Layout class="max-w-3xl">
   <PostHead slot="head" post={post} />
   <section class="flex flex-col gap-y-1">
-    <h1
-      class="leading-thight text-3xl font-medium"
-      transition:name={`post-title-${post.id}`}
-    >
+    <h1 class="leading-thight text-3xl font-medium">
       {post.data.title}
     </h1>
     <div class="text-muted-foreground divide-border flex divide-x text-sm">
