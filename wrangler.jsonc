@@ -15,10 +15,6 @@
   },
   "routes": [
     {
-      "pattern": "jeroendruwe.be",
-      "custom_domain": true
-    },
-    {
       "pattern": "www.jeroendruwe.be",
       "custom_domain": true
     }
