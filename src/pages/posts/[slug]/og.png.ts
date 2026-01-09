@@ -1,19 +1,26 @@
 import { getPostOgImage } from '@/lib/og-utils.tsx';
 import { getAllPosts } from '@/lib/collection-utils.ts';
-import type { APIRoute } from 'astro';
-import type { Post } from '@/types.ts';
+import type {
+  APIRoute,
+  GetStaticPaths,
+  InferGetStaticParamsType,
+  InferGetStaticPropsType,
+} from 'astro';
 
-export const getStaticPaths = async () => {
+export const getStaticPaths = (async () => {
   const posts = await getAllPosts();
 
   return posts.map((post) => ({
     params: { slug: post.id },
     props: post,
   }));
-};
+}) satisfies GetStaticPaths;
 
-export const GET: APIRoute<Post> = async ({ props: post }) => {
-  const image = await getPostOgImage(post);
+type Params = InferGetStaticParamsType<typeof getStaticPaths>;
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+export const GET: APIRoute<Props, Params> = async ({ props }) => {
+  const image = await getPostOgImage(props);
 
   return new Response(Buffer.from(image), {
     headers: { 'Content-Type': 'image/png' },
