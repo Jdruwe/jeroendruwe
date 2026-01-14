@@ -1,0 +1,90 @@
+---
+title: "The Geocache That Listens: Building an Audio Classification Puzzle"
+pubDate: 2026-01-13T17:30:00Z
+description: "I built a geocache that uses real-time audio classification to verify chicken sound imitations. Cachers scan a QR code, cluck into their phone, and get an unlock code if the browser thinks they sound convincing enough."
+tags: []
+draft: true
+---
+import { Image } from 'astro:assets';
+import geocacheIntro from './assets/geocache-intro.jpg';
+import geocacheGame from './assets/geocache-game.jpg';
+import geocacheWinner from './assets/geocache-winner.jpg';
+
+I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
+
+This post covers how I built it, from capturing audio with the Web Audio API to running machine learning models in the browser.
+
+<div class="max-w-lg mx-auto">
+    <Image class="border-4 rounded-xs" src={geocacheIntro} alt="Intro to the geocache game" />
+    <Image class="border-4 rounded-xs" src={geocacheGame} alt="Imitating a chicken" />
+    <Image class="border-4 rounded-xs" src={geocacheWinner} alt="Code to unlock the container" />
+</div>
+
+## Geocache
+
+If you're not familiar with geocaching, it's an outdoor treasure hunt using GPS coordinates. Someone hides a container, posts the coordinates online at [geocaching.com](https://www.geocaching.com/), and others use their phones or GPS devices to find it. There are over 3 million active geocaches worldwide.
+
+Most are straightforward: find the container, sign the logbook, move on. But puzzle caches require solving challenges before you can access the container. These usually involve riddles, ciphers, or math problems solved at home before heading outside.
+
+## Web Audio API and Worklets
+
+Before diving into the classification part, I needed a way to capture audio from the user's microphone and process it in real-time without freezing the browser. That's where the Web Audio API comes in.
+
+The Web Audio API provides powerful tools for audio processing in the browser, but there's a catch: running heavy audio processing on the main thread can block the UI and create a janky experience. If the browser is busy analyzing audio, buttons stop responding, animations stutter, and users get frustrated.
+
+The solution is **AudioWorklet**, a relatively modern part of the Web Audio API that lets you run custom audio processing code on a separate thread. This keeps your audio pipeline running smoothly without interfering with the rest of your page.
+
+### AudioWorkletProcessor
+
+An **AudioWorkletProcessor** is a class that runs in the audio worklet thread. You define how to process audio data by overriding a `process()` method, which gets called repeatedly with chunks of audio samples from the microphone or other sources.
+
+Here's the basic flow:
+
+1. Request microphone access using `navigator.mediaDevices.getUserMedia()`
+2. Create an `AudioContext` to manage the audio pipeline
+3. Load your custom `AudioWorkletProcessor` module
+4. Connect the microphone input to your worklet processor
+5. The processor receives audio data in real-time and can forward it elsewhere
+
+In my case, the worklet captures audio chunks from the microphone and passes them along to the MediaPipe audio classifier. The worklet doesn't do the classification itself—it just ensures that audio processing happens on a dedicated thread, keeping the main thread free for UI updates, user interactions, and displaying the classification results.
+
+Without AudioWorklet, running real-time audio classification would mean blocking the main thread every time a new audio chunk arrives. With it, the audio pipeline runs smoothly in the background while the rest of the page stays responsive.
+
+## MediaPipe Studio
+
+[MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/guide) is Google's collection of machine learning solutions designed to run efficiently in browsers, on mobile devices, and at the edge. It covers a wide range of tasks like pose detection, face mesh tracking, object detection, and, crucially for this project, audio classification.
+
+What makes MediaPipe appealing is that it's built for real-world use cases. The models are optimized to run on-device, meaning no backend server is needed. Everything happens in the browser, which keeps latency low and avoids the cost and complexity of managing a server-side ML pipeline.
+
+For this geocache project, I used MediaPipe's **Audio Classifier**, which can identify sounds in real-time and return confidence scores for various audio categories. The classifier is based on a model called **Yamnet**, which I'll cover in more detail below.
+
+### Audio Classification
+
+MediaPipe's audio classifier works by analyzing short windows of audio (typically a few seconds) and returning a list of detected sound categories along with confidence scores. For example, if you play a dog barking, the classifier might return "Dog" with a confidence score of 0.87, "Animal" with 0.72, and "Bark" with 0.65.
+
+For my geocache, I specifically care about one category: chicken or rooster sounds. When a user makes a sound, the audio gets captured, passed through the worklet, fed into the MediaPipe classifier, and scored. If the confidence score for chicken-related sounds exceeds a certain threshold, the user gets the unlock code. If not, they try again.
+
+One of the most helpful tools during development was the [MediaPipe Audio Classifier demo](https://mediapipe-studio.webapps.google.com/studio/demo/audio_classifier). It's a live web interface where you can test the classifier with your own audio input. I used it extensively to experiment with different sounds, test threshold values, and get a feel for how the model responds to various chicken imitations before integrating it into my site.
+
+The integration itself is straightforward. MediaPipe provides a JavaScript library you can load in the browser. You initialize the classifier, feed it audio data from your worklet, and handle the classification results in a callback function. The library handles all the heavy lifting—loading the model, running inference, and returning predictions.
+
+### Yamnet
+
+**Yamnet** is the audio event detection model that powers MediaPipe's audio classifier. It's a neural network trained on [AudioSet](https://research.google.com/audioset/), a large-scale dataset of over 2 million labeled audio clips covering 521 different sound categories.
+
+These categories range from the obvious—like "Dog," "Car," "Speech," and "Music"—to the surprisingly specific—like "Zipper," "Yodeling," and yes, "Chicken, rooster." The model was designed to recognize everyday sounds in uncontrolled environments, which makes it a good fit for real-world applications like this geocache project.
+
+When Yamnet processes an audio clip, it outputs confidence scores for all 521 categories. Each score represents how confident the model is that a particular sound is present in the audio. Scores range from 0.0 (definitely not present) to 1.0 (very confident it's present).
+
+For this project, I filter the results to focus on chicken and rooster-related categories. If the confidence score crosses a threshold—something like 0.4 or 0.5, depending on how strict I want to be—the user's imitation is accepted, and they get the combination to unlock the geocache container.
+
+One interesting challenge was tuning that threshold. Too low, and random background noise might trigger a pass. Too high, and even decent chicken sounds get rejected. Testing with real users (and a lot of personal trial and error) helped me land on a threshold that felt fair and fun.
+
+## Resources
+
+- [toktoktok.pages.dev](https://toktoktok.pages.dev/) - The live geocache website
+- [MediaPipe Audio Classifier demo](https://mediapipe-studio.webapps.google.com/studio/demo/audio_classifier) - Test audio classification in your browser
+- [MediaPipe Audio Classifier documentation](https://ai.google.dev/edge/mediapipe/solutions/audio/audio_classifier) - Integration guide and API reference
+- [Yamnet on TensorFlow Hub](https://tfhub.dev/google/yamnet/1) - Model details and research paper
+- [Web Audio API: AudioWorklet](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet) - MDN documentation for audio worklets
+- [Geocaching.com](https://www.geocaching.com/) - Learn more about geocaching and find caches near you
