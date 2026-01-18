@@ -9,6 +9,7 @@ import { Image } from 'astro:assets';
 import geocacheIntro from './assets/geocache-intro.jpg';
 import geocacheGame from './assets/geocache-game.jpg';
 import geocacheWinner from './assets/geocache-winner.jpg';
+import {AudioRecorder} from "../../post-helpers/audio-classification-geocache/audio-recorder.tsx";
 
 I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
 
@@ -33,6 +34,8 @@ Before diving into the classification part, I needed a way to capture audio from
 The Web Audio API provides powerful tools for audio processing in the browser, but there's a catch: running heavy audio processing on the main thread can block the UI and create a janky experience. If the browser is busy analyzing audio, buttons stop responding, animations stutter, and users get frustrated.
 
 The solution is **AudioWorklet**, a relatively modern part of the Web Audio API that lets you run custom audio processing code on a separate thread. This keeps your audio pipeline running smoothly without interfering with the rest of your page.
+
+<AudioRecorder client:load/>
 
 ### AudioWorkletProcessor
 
