@@ -5,10 +5,11 @@ description: "I built a geocache that uses real-time audio classification to ver
 tags: []
 draft: true
 ---
-import { Image } from 'astro:assets';
+import {Image} from 'astro:assets';
 import geocacheIntro from './assets/geocache-intro.jpg';
 import geocacheGame from './assets/geocache-game.jpg';
 import geocacheWinner from './assets/geocache-winner.jpg';
+import {NoProse} from '../../components/ui/no-prose.tsx';
 import {AudioRecorder} from "../../post-helpers/audio-classification-geocache/audio-recorder.tsx";
 
 I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
@@ -16,9 +17,9 @@ I built a geocache that asks people to imitate a chicken. Cachers scan a QR code
 This post covers how I built it, from capturing audio with the Web Audio API to running machine learning models in the browser.
 
 <div class="max-w-lg mx-auto">
-    <Image class="border-4 rounded-xs" src={geocacheIntro} alt="Intro to the geocache game" />
-    <Image class="border-4 rounded-xs" src={geocacheGame} alt="Imitating a chicken" />
-    <Image class="border-4 rounded-xs" src={geocacheWinner} alt="Code to unlock the container" />
+    <Image class="border-4 rounded-xs" src={geocacheIntro} alt="Intro to the geocache game"/>
+    <Image class="border-4 rounded-xs" src={geocacheGame} alt="Imitating a chicken"/>
+    <Image class="border-4 rounded-xs" src={geocacheWinner} alt="Code to unlock the container"/>
 </div>
 
 ## Geocache
@@ -27,6 +28,57 @@ If you're not familiar with geocaching, it's an outdoor treasure hunt using GPS 
 
 Most are straightforward: find the container, sign the logbook, move on. But puzzle caches require solving challenges before you can access the container. These usually involve riddles, ciphers, or math problems solved at home before heading outside.
 
+
+## Recording Audio
+
+Before I could classify chicken sounds, I needed a way to capture audio from the user's microphone. The Web Audio API makes this relatively straightforward with [`getUserMedia()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), but there are a few gotchas when dealing with real-time recording in the browser.
+
+Here's a basic recording demo. Click "Start recording" to capture audio from your microphone, then stop to play it back:
+
+x
+<NoProse>
+    <AudioRecorder client:load/>
+</NoProse>
+
+### Building the Recorder Hook
+
+I structured the recording logic as a custom React hook (`useAudioRecorder`) to keep the component clean and the state management isolated. The hook handles:
+
+- **Microphone access** - Requesting permission and getting a MediaStream
+- **Recording state** - Tracking whether we're currently recording
+- **Audio chunks** - Collecting blob data as the recording progresses
+- **Cleanup** - Stopping tracks, revoking object URLs, and releasing resources
+
+```tsx
+// AudioRecorder.tsx
+const AudioRecorder = () => {
+  const { isRecording, startRecording, stopRecording, audioUrl, error } =
+    useAudioRecorder();
+...
+```
+
+### MediaRecorder API
+
+The MediaRecorder API is the browser's built-in solution for recording audio (and video). Here's the basic flow:
+
+1. Get a MediaStream from `getUserMedia({ audio: true })`
+2. Create a MediaRecorder instance with that stream
+3. Attach event handlers for `ondataavailable` and `onstop`
+4. Call `recorder.start()` to begin capturing
+5. Collect chunks in `ondataavailable`
+6. Call `recorder.stop()` when the user is done
+7. In `onstop`, combine chunks into a Blob and create an object URL
+
+### Error Handling and Edge Cases
+
+A few things can go wrong during recording:
+
+- **Permission denied** - The user might reject microphone access
+- **No microphone available** - Some devices or browsers don't support audio input
+- **Component unmounts mid-recording** - The user navigates away before stopping
+
+I handle these by wrapping `getUserMedia()` in a try-catch block and checking if the component is still mounted before proceeding with recording. If an error occurs, the hook sets an error message that the component displays to the user.
+
 ## Web Audio API and Worklets
 
 Before diving into the classification part, I needed a way to capture audio from the user's microphone and process it in real-time without freezing the browser. That's where the Web Audio API comes in.
@@ -34,8 +86,6 @@ Before diving into the classification part, I needed a way to capture audio from
 The Web Audio API provides powerful tools for audio processing in the browser, but there's a catch: running heavy audio processing on the main thread can block the UI and create a janky experience. If the browser is busy analyzing audio, buttons stop responding, animations stutter, and users get frustrated.
 
 The solution is **AudioWorklet**, a relatively modern part of the Web Audio API that lets you run custom audio processing code on a separate thread. This keeps your audio pipeline running smoothly without interfering with the rest of your page.
-
-<AudioRecorder client:load/>
 
 ### AudioWorkletProcessor
 

@@ -42,14 +42,23 @@ const RecorderDisplay = ({
   return <RecordingUnavailable />;
 };
 
+// todo: migrate to Base UI!
+
 const AudioRecorder = () => {
   const { isRecording, startRecording, stopRecording, audioUrl, error } =
     useAudioRecorder();
 
   return (
     <SpaceRoot>
-      <SpaceHeader className="border-b">
+      <SpaceHeader className="flex justify-between border-b">
         <SpaceTitle>Voice recording</SpaceTitle>
+        {/*todo: space link*/}
+        {/*<a*/}
+        {/*  href="https://github.com/Jdruwe/jeroendruwe/blob/master/src/post-helpers/audio-classification-geocache/audio-recorder.tsx"*/}
+        {/*  target="_blank"*/}
+        {/*>*/}
+        {/*  Source*/}
+        {/*</a>*/}
       </SpaceHeader>
       <SpaceContent>
         <div className="grid place-items-center">

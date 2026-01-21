@@ -14,7 +14,7 @@ function SpaceTitle({
   return (
     <Comp
       data-slot="space-title"
-      className={cn('my-0 text-lg leading-none font-semibold', className)}
+      className={cn('text-lg leading-none font-semibold', className)}
       {...props}
     />
   );
