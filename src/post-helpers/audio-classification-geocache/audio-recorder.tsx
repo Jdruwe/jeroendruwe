@@ -50,15 +50,19 @@ const AudioRecorder = () => {
 
   return (
     <SpaceRoot>
-      <SpaceHeader className="flex justify-between">
+      <SpaceHeader>
         <SpaceTitle>Voice recording</SpaceTitle>
-        {/*todo: space link*/}
-        {/*<a*/}
-        {/*  href="https://github.com/Jdruwe/jeroendruwe/blob/master/src/post-helpers/audio-classification-geocache/audio-recorder.tsx"*/}
-        {/*  target="_blank"*/}
-        {/*>*/}
-        {/*  Source*/}
-        {/*</a>*/}
+        <Button
+          variant="ghost"
+          render={
+            <a
+              href="https://github.com/Jdruwe/jeroendruwe/blob/master/src/post-helpers/audio-classification-geocache/audio-recorder.tsx"
+              target="_blank"
+            >
+              Source
+            </a>
+          }
+        />
       </SpaceHeader>
       <SpaceContent>
         <div className="grid place-items-center">

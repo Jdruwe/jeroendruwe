@@ -13,7 +13,7 @@ function SpaceHeader(props: SpaceHeaderProps) {
       ...mergeProps<'div'>(
         {
           className: cn(
-            'group/card-header flex justify-between rounded-t-xl px-4 border-b pb-4',
+            'group/card-header flex justify-between items-center rounded-t-xl px-4 border-b pb-4',
             className,
           ),
         },
