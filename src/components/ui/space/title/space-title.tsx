@@ -1,23 +1,24 @@
-import React, { type ComponentProps } from 'react';
-import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils.ts';
+import { mergeProps, useRender } from '@base-ui/react';
 
-function SpaceTitle({
-  className,
-  asChild = false,
-  ...props
-}: ComponentProps<'div'> & {
-  asChild?: boolean;
-}) {
-  const Comp = asChild ? Slot : 'div';
+interface SpaceTitleProps extends useRender.ComponentProps<'div'> {}
 
-  return (
-    <Comp
-      data-slot="space-title"
-      className={cn('text-lg leading-none font-semibold', className)}
-      {...props}
-    />
-  );
+function SpaceTitle(props: SpaceTitleProps) {
+  const { render, className, ...otherProps } = props;
+
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: {
+      ...mergeProps<'div'>(
+        {
+          className: cn('text-base leading-snug font-medium', className),
+        },
+        otherProps,
+      ),
+      'data-slot': 'space-title',
+    },
+  });
 }
 
 export { SpaceTitle };

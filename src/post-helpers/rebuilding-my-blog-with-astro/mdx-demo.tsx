@@ -18,9 +18,9 @@ const MdxDemo = () => {
       </SpaceHeader>
       <SpaceContent className="grid place-items-center">
         <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">Free Bitcoins 💰</Button>
-          </DialogTrigger>
+          <DialogTrigger
+            render={<Button variant="outline">Free Bitcoins 💰</Button>}
+          />
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Never Gonna Give You Up</DialogTitle>

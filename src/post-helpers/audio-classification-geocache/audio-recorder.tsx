@@ -42,7 +42,7 @@ const RecorderDisplay = ({
   return <RecordingUnavailable />;
 };
 
-// todo: migrate to Base UI!
+// todo: migrate to Base UI, check /Users/jeroendruwe/work/personal/tanstack/start-app and https://ui.shadcn.com/create?base=base to generate proper colors
 
 const AudioRecorder = () => {
   const { isRecording, startRecording, stopRecording, audioUrl, error } =
@@ -50,7 +50,7 @@ const AudioRecorder = () => {
 
   return (
     <SpaceRoot>
-      <SpaceHeader className="flex justify-between border-b">
+      <SpaceHeader className="flex justify-between">
         <SpaceTitle>Voice recording</SpaceTitle>
         {/*todo: space link*/}
         {/*<a*/}
@@ -69,7 +69,7 @@ const AudioRecorder = () => {
           />
         </div>
       </SpaceContent>
-      <SpaceFooter className="border-t">
+      <SpaceFooter>
         {isRecording ? (
           <Button
             onClick={stopRecording}

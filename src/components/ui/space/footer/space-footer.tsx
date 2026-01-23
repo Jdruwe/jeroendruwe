@@ -1,23 +1,27 @@
-import React, { type ComponentProps } from 'react';
-import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils.ts';
+import { mergeProps, useRender } from '@base-ui/react';
 
-function SpaceFooter({
-  className,
-  asChild = false,
-  ...props
-}: ComponentProps<'div'> & {
-  asChild?: boolean;
-}) {
-  const Comp = asChild ? Slot : 'div';
+interface SpaceFooterProps extends useRender.ComponentProps<'div'> {}
 
-  return (
-    <Comp
-      data-slot="space-footer"
-      className={cn('px-6 [.border-t]:pt-6', className)}
-      {...props}
-    />
-  );
+function SpaceFooter(props: SpaceFooterProps) {
+  const { render, className, ...otherProps } = props;
+
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: {
+      ...mergeProps<'div'>(
+        {
+          className: cn(
+            'bg-muted/50 flex items-center rounded-b-xl border-t p-4',
+            className,
+          ),
+        },
+        otherProps,
+      ),
+      'data-slot': 'space-footer',
+    },
+  });
 }
 
 export { SpaceFooter };

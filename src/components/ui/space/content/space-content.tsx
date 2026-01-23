@@ -1,23 +1,19 @@
-import React, { type ComponentProps } from 'react';
-import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils.ts';
+import { mergeProps, useRender } from '@base-ui/react';
 
-function SpaceContent({
-  className,
-  asChild = false,
-  ...props
-}: ComponentProps<'div'> & {
-  asChild?: boolean;
-}) {
-  const Comp = asChild ? Slot : 'div';
+interface SpaceContentProps extends useRender.ComponentProps<'div'> {}
 
-  return (
-    <Comp
-      data-slot="space-content"
-      className={cn('px-6', className)}
-      {...props}
-    />
-  );
+function SpaceContent(props: SpaceContentProps) {
+  const { render, className, ...otherProps } = props;
+
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: {
+      ...mergeProps<'div'>({ className: cn('px-4', className) }, otherProps),
+      'data-slot': 'space-content',
+    },
+  });
 }
 
 export { SpaceContent };
