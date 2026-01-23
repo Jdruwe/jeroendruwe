@@ -11,7 +11,8 @@ import geocacheIntro from './assets/geocache-intro.jpg';
 import geocacheGame from './assets/geocache-game.jpg';
 import geocacheWinner from './assets/geocache-winner.jpg';
 import {NoProse} from '../../components/ui/no-prose.tsx';
-import {AudioRecorder} from "../../post-helpers/audio-classification-geocache/audio-recorder.tsx";
+import {AudioRecorder} from "../../post-helpers/audio-classification-geocache/audio-recorder/audio-recorder.tsx";
+import {StereoPanner} from "../../post-helpers/audio-classification-geocache/stereo-panner/stereo-panner.tsx";
 
 I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
 
@@ -30,39 +31,25 @@ If you're not familiar with geocaching, it's an outdoor treasure hunt using GPS 
 
 Most are straightforward: find the container, sign the logbook, move on. But puzzle caches require solving challenges before you can access the container. These usually involve riddles, ciphers, or math problems solved at home before heading outside.
 
+## Capturing Audio
 
-## Media Capture and Streams API (Media Stream)
-## MediaStream Recording API
-## Web Audio API
+The first step in building the audio classification system was getting access to the user's microphone. This is handled by the [Media Capture and Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Media_Capture_and_Streams_API), which provides a standardized way to access media input devices in the browser.
 
-Before I could classify chicken sounds, I needed a way to capture audio from the user's microphone. The Web Audio API makes this relatively straightforward with [`getUserMedia()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), but there are a few gotchas when dealing with real-time recording in the browser.
-
-Here's a basic recording demo. Click "Start recording" to capture audio from your microphone, then stop to play it back:
-
-<NoProse>
-    <AudioRecorder client:load/>
-</NoProse>
-
-### Building the Recorder Hook
-
-I structured the recording logic as a custom React hook (`useAudioRecorder`) to keep the component clean and the state management isolated. The hook handles:
-
-- **Microphone access** - Requesting permission and getting a MediaStream
-- **Recording state** - Tracking whether we're currently recording
-- **Audio chunks** - Collecting blob data as the recording progresses
-- **Cleanup** - Stopping tracks, revoking object URLs, and releasing resources
+The core of this API is [`getUserMedia()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), a method that prompts the user for permission to access their microphone or camera. When you call it with `{ audio: true }`, the browser shows a permission dialog. If the user approves, you get a [`MediaStream`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream) object containing the audio track from their microphone.
 
 ```tsx
-// AudioRecorder.tsx
-const AudioRecorder = () => {
-  const { isRecording, startRecording, stopRecording, audioUrl, error } =
-    useAudioRecorder();
-...
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 ```
 
-### MediaRecorder
+The `MediaStream` represents a stream of media content, in this case audio data from the microphone. This stream can be used in multiple ways—recording it with MediaRecorder, processing it with the Web Audio API, or even streaming it to another user in a WebRTC call.
 
-The MediaRecorder interface provides functionality to easily record media. Here's the basic flow:
+## Recording Audio
+
+Once I had access to the microphone via `getUserMedia()`, I needed a way to actually record and store the audio. [MediaStream Recording API](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API) to the rescue.
+
+The [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) interface takes a `MediaStream` and records it into chunks of data. You attach event handlers to collect these chunks, and when recording stops, you combine them into a single audio file (typically a Blob) that can be played back or sent to a server.
+
+Here's how MediaRecorder works in practice:
 
 1. Get a MediaStream from `getUserMedia({ audio: true })`
 2. Create a MediaRecorder instance with that stream
@@ -71,6 +58,12 @@ The MediaRecorder interface provides functionality to easily record media. Here'
 5. Collect chunks in `ondataavailable`
 6. Call `recorder.stop()` when the user is done
 7. In `onstop`, combine chunks into a Blob and create an object URL
+
+Here's a basic recording demo to see it in action:
+
+<NoProse>
+    <AudioRecorder client:load/>
+</NoProse>
 
 ```tsx
 // use-audio-recorder.ts
@@ -107,29 +100,73 @@ const startRecording = async () => {
 };
 ```
 
-## Web Audio API
+## Audio Processing
 
-Before diving into the classification part, I needed a way to capture audio from the user's microphone and process it in real-time without freezing the browser. That's where the Web Audio API comes in.
+Recording audio with MediaRecorder works fine for playback, but for real-time audio classification, I needed something more powerful. That's where the [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) comes in.
 
-The Web Audio API provides powerful tools for audio processing in the browser, but there's a catch: running heavy audio processing on the main thread can block the UI and create a janky experience. If the browser is busy analyzing audio, buttons stop responding, animations stutter, and users get frustrated.
+The Web Audio API is designed for processing and synthesizing audio in the browser. Unlike MediaRecorder, which simply records chunks of audio, the Web Audio API gives you fine-grained control over audio streams through a modular system of **audio nodes**.
 
-The solution is **AudioWorklet**, a relatively modern part of the Web Audio API that lets you run custom audio processing code on a separate thread. This keeps your audio pipeline running smoothly without interfering with the rest of your page.
+### Audio Nodes and the Audio Graph
 
-### AudioWorkletProcessor
+The core concept of the Web Audio API is the **audio graph**—a network of audio nodes connected together. Each node performs a specific function, like capturing input, applying effects, analyzing frequency data, or outputting to speakers.
 
-An **AudioWorkletProcessor** is a class that runs in the audio worklet thread. You define how to process audio data by overriding a `process()` method, which gets called repeatedly with chunks of audio samples from the microphone or other sources.
+Here's how nodes connect:
 
-Here's the basic flow:
+1. **Source nodes** - Generate or capture audio (like a microphone stream)
+2. **Processing nodes** - Modify or analyze the audio (like gain control, filters, or custom processing)
+3. **Destination nodes** - Output the audio (usually to speakers, but can also be to another stream)
 
-1. Request microphone access using `navigator.mediaDevices.getUserMedia()`
-2. Create an `AudioContext` to manage the audio pipeline
-3. Load your custom `AudioWorkletProcessor` module
-4. Connect the microphone input to your worklet processor
-5. The processor receives audio data in real-time and can forward it elsewhere
+Nodes are connected using the `.connect()` method, creating a chain through which audio flows:
 
-In my case, the worklet captures audio chunks from the microphone and passes them along to the MediaPipe audio classifier. The worklet doesn't do the classification itself—it just ensures that audio processing happens on a dedicated thread, keeping the main thread free for UI updates, user interactions, and displaying the classification results.
+<NoProse>
+    <StereoPanner client:load/>
+</NoProse>
 
-Without AudioWorklet, running real-time audio classification would mean blocking the main thread every time a new audio chunk arrives. With it, the audio pipeline runs smoothly in the background while the rest of the page stays responsive.
+```tsx
+const audioContext = new AudioContext();
+const source = audioContext.createMediaStreamSource(stream);
+const gainNode = audioContext.createGain();
+const destination = audioContext.destination;
+
+source.connect(gainNode);
+gainNode.connect(destination);
+```
+
+In this example, audio flows from the microphone → through a gain node (volume control) → to the speakers.
+
+### AudioWorkletProcessor for Real-Time Processing
+
+For the geocache, I needed to process audio in real-time without blocking the main thread. Running heavy audio analysis on the main thread would freeze the UI every time a chunk gets processed. The solution is [`AudioWorklet`](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet).
+
+AudioWorklet lets you write custom audio processing code that runs on a separate audio rendering thread. You define an [`AudioWorkletProcessor`](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor)—a class that receives audio samples, processes them, and passes them along.
+
+Here's the basic architecture:
+
+1. Create an [`AudioContext`](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) to manage the audio pipeline
+2. Load your custom AudioWorkletProcessor module using [`audioContext.audioWorklet.addModule()`](https://developer.mozilla.org/en-US/docs/Web/API/Worklet/addModule)
+3. Create an [`AudioWorkletNode`](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletNode) that wraps your processor
+4. Connect the microphone source → AudioWorkletNode → destination (or silence if you don't need playback)
+
+The AudioWorkletProcessor receives audio data in the `process()` method, which is called automatically by the browser at regular intervals. Inside `process()`, you can collect audio samples and forward them for further analysis.
+
+```tsx
+// audio-worklet-processor.js (runs in worklet thread)
+class AudioClassifierProcessor extends AudioWorkletProcessor {
+  process(inputs, outputs, parameters) {
+    const input = inputs[0];
+    if (input.length > 0) {
+      const samples = input[0]; // First channel
+      // Send samples for classification
+      this.port.postMessage({ samples });
+    }
+    return true; // Keep processor alive
+  }
+}
+
+registerProcessor('audio-classifier-processor', AudioClassifierProcessor);
+```
+
+The key benefit of AudioWorklet is that this processing happens off the main thread. While the worklet is collecting and forwarding audio samples, the UI remains responsive—buttons work, animations run smoothly, and users can interact with the page without jank.
 
 ## MediaPipe Studio
 

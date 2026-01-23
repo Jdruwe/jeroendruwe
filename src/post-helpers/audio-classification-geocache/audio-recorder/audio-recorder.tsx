@@ -7,7 +7,7 @@ import {
 import { SpaceContent } from '@/components/ui/space/content/space-content.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { MicIcon, SquareIcon } from 'lucide-react';
-import { useAudioRecorder } from '@/post-helpers/audio-classification-geocache/use-audio-recorder.ts';
+import { useAudioRecorder } from './use-audio-recorder';
 
 const RecordingError = ({ message }: { message: string }) => (
   <div className="text-red-500">{message}</div>
@@ -41,8 +41,6 @@ const RecorderDisplay = ({
   if (audioUrl) return <RecordingPlayer audioUrl={audioUrl} />;
   return <RecordingUnavailable />;
 };
-
-// todo: migrate to Base UI, check /Users/jeroendruwe/work/personal/tanstack/start-app and https://ui.shadcn.com/create?base=base to generate proper colors
 
 const AudioRecorder = () => {
   const { isRecording, startRecording, stopRecording, audioUrl, error } =
