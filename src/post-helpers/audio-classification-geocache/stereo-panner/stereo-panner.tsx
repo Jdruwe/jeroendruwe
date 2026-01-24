@@ -1,4 +1,3 @@
-import React, { useState, useRef } from 'react';
 import {
   SpaceFooter,
   SpaceHeader,
@@ -7,29 +6,23 @@ import {
 } from '@/components/ui/space';
 import { Button } from '@/components/ui/button.tsx';
 import { SpaceContent } from '@/components/ui/space/content/space-content.tsx';
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  MicIcon,
-  SquareIcon,
-} from 'lucide-react';
+import { MicIcon, SquareIcon } from 'lucide-react';
 import { useStereoPanner } from '@/post-helpers/audio-classification-geocache/stereo-panner/use-stereo-panner.ts';
+import { Slider } from '@/components/ui/slider.tsx';
+import { Label } from '@/components/ui/label.tsx';
 
 const StereoPanner = () => {
-  const { isPanning, updatePanning, startRecording, stopRecording, error } =
+  const { pan, setPan, isPanning, startRecording, stopRecording, error } =
     useStereoPanner();
 
-  // I want to know how people handle naming this methos!
-  const handleLeftClick = () => {
-    updatePanning(-1); // Pan fully to the left
-  };
+  const handleValueChange = (value: number | readonly number[]) => {
+    if (typeof value !== 'number') return;
 
-  const handleRightClick = () => {
-    updatePanning(1); // Pan fully to the right
+    setPan(value);
   };
 
   return (
-    <SpaceRoot>
+    <SpaceRoot style={{ transform: `rotate(${pan * 1.5}deg)` }}>
       <SpaceHeader>
         <SpaceTitle>Stereo Panner</SpaceTitle>
         <Button
@@ -45,17 +38,34 @@ const StereoPanner = () => {
         />
       </SpaceHeader>
       <SpaceContent>
-        <div>
-          <div className="flex gap-2">
-            <Button className="flex-1" size="lg" onClick={handleLeftClick}>
-              <ArrowLeftIcon /> LEFT
-            </Button>
-            <Button className="flex-1" size="lg" onClick={handleRightClick}>
-              RIGHT <ArrowRightIcon />
-            </Button>
+        {!!error && <p className="mx-auto w-fit text-red-500">{error}</p>}
+        {isPanning && (
+          <div className="flex flex-col gap-3">
+            <p className="text-muted-foreground">
+              For the full panning effect, listen with both left and right
+              channels. Using a single earbud or mono speaker may result in
+              silent audio at extreme pan values.
+            </p>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="slider-stereo-panner">Panning</Label>
+              <span className="text-muted-foreground text-sm">{pan}</span>
+            </div>
+            <Slider
+              id="slider-stereo-panner"
+              value={pan}
+              onValueChange={handleValueChange}
+              min={-1}
+              max={1}
+              step={0.1}
+              className="**:data-[slot='slider-range']:bg-inherit"
+            />
           </div>
-          <div className="text-muted-foreground">Not recording audio.</div>
-        </div>
+        )}
+        {!isPanning && (
+          <p className="text-muted-foreground mx-auto w-fit">
+            Click "Start recording" below to check out audio panning.
+          </p>
+        )}
       </SpaceContent>
       <SpaceFooter>
         {isPanning ? (

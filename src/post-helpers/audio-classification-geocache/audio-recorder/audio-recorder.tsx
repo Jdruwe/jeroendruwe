@@ -10,13 +10,13 @@ import { MicIcon, SquareIcon } from 'lucide-react';
 import { useAudioRecorder } from './use-audio-recorder';
 
 const RecordingError = ({ message }: { message: string }) => (
-  <div className="text-red-500">{message}</div>
+  <p className="text-red-500">{message}</p>
 );
 
 const RecordingInProgress = () => (
-  <div className="animate-pulse font-medium text-red-500">
+  <p className="animate-pulse font-medium text-red-500">
     Recording in progress...
-  </div>
+  </p>
 );
 
 const RecordingPlayer = ({ audioUrl }: { audioUrl: string }) => (
@@ -24,7 +24,7 @@ const RecordingPlayer = ({ audioUrl }: { audioUrl: string }) => (
 );
 
 const RecordingUnavailable = () => (
-  <div className="text-muted-foreground">No recording available.</div>
+  <p className="text-muted-foreground">No recording available.</p>
 );
 
 const RecorderDisplay = ({

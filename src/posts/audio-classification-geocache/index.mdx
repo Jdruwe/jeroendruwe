@@ -123,16 +123,28 @@ Nodes are connected using the `.connect()` method, creating a chain through whic
 </NoProse>
 
 ```tsx
+// use-stereo-panner.ts
 const audioContext = new AudioContext();
-const source = audioContext.createMediaStreamSource(stream);
-const gainNode = audioContext.createGain();
-const destination = audioContext.destination;
+const mediaStreamSourceNode = audioContext.createMediaStreamSource(stream);
+const stereoPannerNode = audioContext.createStereoPanner();
 
-source.connect(gainNode);
-gainNode.connect(destination);
+// Mic -> Panner -> Speakers
+mediaStreamSourceNode.connect(stereoPannerNode);
+stereoPannerNode.connect(audioContext.destination);
+
+...
+
+useEffect(() => {
+    stereoPannerNode.pan.setTargetAtTime(
+      pan,
+      audioContext.currentTime,
+      0.05,
+    );
+}, [pan]);
+
 ```
 
-In this example, audio flows from the microphone → through a gain node (volume control) → to the speakers.
+In this example, audio flows from the microphone → through a stereo panner node → to the speakers.
 
 ### AudioWorkletProcessor for Real-Time Processing
 

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 export const useStereoPanner = () => {
+  const [pan, setPan] = useState<number>(0);
   const [isPanning, setIsPanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,18 +15,28 @@ export const useStereoPanner = () => {
     mediaStream.getTracks().forEach((track) => track.stop());
   };
 
-  const cleanupResources = () => {
+  const cleanupResources = async () => {
     if (mediaStreamRef.current) {
       stopStreamTracks(mediaStreamRef.current);
       mediaStreamRef.current = null;
     }
 
-    // todo: proper cleanup!
-  };
+    audioSourceNodeRef.current?.disconnect();
+    stereoPannerNodeRef.current?.disconnect();
 
-  const reset = () => {
-    cleanupResources();
-    setError(null);
+    audioSourceNodeRef.current = null;
+    stereoPannerNodeRef.current = null;
+
+    if (audioContextRef.current) {
+      if (audioContextRef.current.state !== 'closed') {
+        try {
+          await audioContextRef.current.close();
+        } catch (e) {
+          console.warn('AudioContext close error:', e);
+        }
+      }
+      audioContextRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -33,13 +44,14 @@ export const useStereoPanner = () => {
 
     return () => {
       isMountedRef.current = false;
-      cleanupResources();
+      void cleanupResources();
     };
   }, []);
 
   const startRecording = async () => {
     try {
-      reset();
+      await cleanupResources();
+      setError(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -69,20 +81,18 @@ export const useStereoPanner = () => {
 
   const stopRecording = () => {
     setIsPanning(false);
+    void cleanupResources();
   };
 
-  // Value ranges from -1 (Left) to 1 (Right)
-  const updatePanning = (value: number) => {
-    if (!audioContextRef.current) return;
-
-    if (stereoPannerNodeRef.current) {
+  useEffect(() => {
+    if (stereoPannerNodeRef.current && audioContextRef.current) {
       stereoPannerNodeRef.current.pan.setTargetAtTime(
-        value,
+        pan,
         audioContextRef.current.currentTime,
         0.05,
       );
     }
-  };
+  }, [pan]);
 
-  return { isPanning, updatePanning, error, startRecording, stopRecording };
+  return { isPanning, pan, setPan, error, startRecording, stopRecording };
 };
