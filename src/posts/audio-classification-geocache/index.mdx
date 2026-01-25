@@ -176,14 +176,22 @@ For my use case, I needed an audio classification solution that could run entire
 * **Configuration:** You can adjust inference settings such as **Score threshold** (to filter out low-confidence predictions) and **Max results** (to limit the number of detected categories).
 * **Supported SDKs:** MediaPipe provides native libraries across several environments: **Web:** JavaScript / TypeScript (see this [official CodePen example](https://codepen.io/mediapipe-preview/pen/wvxYYmy)), **Android:** Java / Kotlin & **Python**.
 
-<div class="max-w-lg mx-auto flex flex-col gap-4 not-prose">
-    <Image class="border-4 rounded-xs" src={yamnetClasses} alt="Classes supported by the Yamnet deep net"/>
-    <p>YamNet classifying the sound of a baby laughing</p>
+<div class="max-w-lg mx-auto flex flex-col gap-5 not-prose">
     <div class="flex flex-col gap-2">
-        <audio src={babyLaughing} controls class="w-full" />
-        <p class="text-muted-foreground text-xs">Sound Effect by <a href="https://pixabay.com/users/scottishperson-16626294/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=237186">Scottish Guy</a></p>
+        <Image class="border-4 rounded-xs" src={yamnetClasses} alt="Classes supported by the Yamnet deep net"/>
+        <p class="text-muted-foreground text-xs">YamNet classes</p>
     </div>
-    <Image class="border-4 rounded-xs" src={yamnetClassification} alt="Yamnet classifying the sound of a baby laughing, top 3 results are being shown"/>
+    <div class="flex flex-col gap-2">
+        <audio src={babyLaughing} controls class="w-full"/>
+        <p class="text-muted-foreground text-xs">Sound Effect by <a
+            href="https://pixabay.com/users/scottishperson-16626294/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=237186">Scottish
+            Guy</a></p>
+    </div>
+    <div class="flex flex-col gap-2">
+        <Image class="border-4 rounded-xs" src={yamnetClassification}
+               alt="Yamnet classifying the sound of a baby laughing, top 3 results are being shown"/>
+        <p class="text-muted-foreground text-xs">YamNet classifying the sound of a baby laughing</p>
+    </div>
 </div>
 
 ### Implementation
