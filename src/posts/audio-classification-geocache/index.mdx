@@ -10,6 +10,9 @@ import geocacheContainer from './assets/geocache-container.jpeg';
 import geocacheIntro from './assets/geocache-intro.jpg';
 import geocacheGame from './assets/geocache-game.jpg';
 import geocacheWinner from './assets/geocache-winner.jpg';
+import yamnetClasses from './assets/yamnet-classes.jpg';
+import yamnetClassification from './assets/yamnet-classification.jpg';
+import babyLaughing from './assets/baby-laughing.mp3';
 import {NoProse} from '../../components/ui/no-prose.tsx';
 import {AudioRecorder} from "../../post-helpers/audio-classification-geocache/audio-recorder/audio-recorder.tsx";
 import {StereoPanner} from "../../post-helpers/audio-classification-geocache/stereo-panner/stereo-panner.tsx";
@@ -100,7 +103,9 @@ const startRecording = async () => {
 };
 ```
 
-## Audio Processing
+## Controlling Audio Flow
+
+TODO: update text below!
 
 Recording audio with MediaRecorder works fine for playback, but for real-time audio classification, I needed something more powerful. That's where the [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) comes in.
 
@@ -144,71 +149,46 @@ useEffect(() => {
 
 ```
 
-In this example, audio flows from the microphone → through a stereo panner node → to the speakers.
-
-### AudioWorkletProcessor for Real-Time Processing
-
-For the geocache, I needed to process audio in real-time without blocking the main thread. Running heavy audio analysis on the main thread would freeze the UI every time a chunk gets processed. The solution is [`AudioWorklet`](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet).
-
-AudioWorklet lets you write custom audio processing code that runs on a separate audio rendering thread. You define an [`AudioWorkletProcessor`](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor)—a class that receives audio samples, processes them, and passes them along.
-
-Here's the basic architecture:
-
-1. Create an [`AudioContext`](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext) to manage the audio pipeline
-2. Load your custom AudioWorkletProcessor module using [`audioContext.audioWorklet.addModule()`](https://developer.mozilla.org/en-US/docs/Web/API/Worklet/addModule)
-3. Create an [`AudioWorkletNode`](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletNode) that wraps your processor
-4. Connect the microphone source → AudioWorkletNode → destination (or silence if you don't need playback)
-
-The AudioWorkletProcessor receives audio data in the `process()` method, which is called automatically by the browser at regular intervals. Inside `process()`, you can collect audio samples and forward them for further analysis.
-
 ```tsx
-// audio-worklet-processor.js (runs in worklet thread)
-class AudioClassifierProcessor extends AudioWorkletProcessor {
-  process(inputs, outputs, parameters) {
-    const input = inputs[0];
-    if (input.length > 0) {
-      const samples = input[0]; // First channel
-      // Send samples for classification
-      this.port.postMessage({ samples });
-    }
-    return true; // Keep processor alive
-  }
-}
-
-registerProcessor('audio-classifier-processor', AudioClassifierProcessor);
+// stereo-panner.tsx
+<Slider
+  value={pan}
+  onValueChange={setPan}
+  min={-1} // -1 is full left
+  max={1} // 1 is full right
+  step={0.1}
+/>
 ```
 
-The key benefit of AudioWorklet is that this processing happens off the main thread. While the worklet is collecting and forwarding audio samples, the UI remains responsive—buttons work, animations run smoothly, and users can interact with the page without jank.
+In this example, audio flows from the microphone → through a stereo panner node → to the speakers.
 
-## MediaPipe Studio
+## Audio Classification
 
-[MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/guide) is Google's collection of machine learning solutions designed to run efficiently in browsers, on mobile devices, and at the edge. It covers a wide range of tasks like pose detection, face mesh tracking, object detection, and, crucially for this project, audio classification.
+For my use case, I needed an audio classification solution that could run entirely client-side. The goal was to have something that works on a mobile device without relying on a server. This requirement ruled out all cloud-based ML APIs and pushed me toward on-device machine learning.
 
-What makes MediaPipe appealing is that it's built for real-world use cases. The models are optimized to run on-device, meaning no backend server is needed. Everything happens in the browser, which keeps latency low and avoids the cost and complexity of managing a server-side ML pipeline.
+### MediaPipe Studio
 
-For this geocache project, I used MediaPipe's **Audio Classifier**, which can identify sounds in real-time and return confidence scores for various audio categories. The classifier is based on a model called **Yamnet**, which I'll cover in more detail below.
+[MediaPipe Studio](https://mediapipe-studio.webapps.google.com/home) is a web-based tool for testing and customizing on-device machine learning models. For audio-based projects, the [Audio Classifier](https://mediapipe-studio.webapps.google.com/studio/demo/audio_classifier) allows you to perform real-time sound recognition directly in the browser.
 
-### Audio Classification
+#### Technical Details
 
-MediaPipe's audio classifier works by analyzing short windows of audio (typically a few seconds) and returning a list of detected sound categories along with confidence scores. For example, if you play a dog barking, the classifier might return "Dog" with a confidence score of 0.87, "Animal" with 0.72, and "Bark" with 0.65.
+* **Model:** It leverages **[YAMNet](https://www.kaggle.com/models/google/yamnet)**, a deep neural network capable of predicting 521 different audio event classes based on the AudioSet dataset.
+* **Configuration:** You can adjust inference settings such as **Score threshold** (to filter out low-confidence predictions) and **Max results** (to limit the number of detected categories).
+* **Supported SDKs:** MediaPipe provides native libraries across several environments: **Web:** JavaScript / TypeScript (see this [official CodePen example](https://codepen.io/mediapipe-preview/pen/wvxYYmy)), **Android:** Java / Kotlin & **Python**.
 
-For my geocache, I specifically care about one category: chicken or rooster sounds. When a user makes a sound, the audio gets captured, passed through the worklet, fed into the MediaPipe classifier, and scored. If the confidence score for chicken-related sounds exceeds a certain threshold, the user gets the unlock code. If not, they try again.
+<div class="max-w-lg mx-auto flex flex-col gap-4 not-prose">
+    <Image class="border-4 rounded-xs" src={yamnetClasses} alt="Classes supported by the Yamnet deep net"/>
+    <p>YamNet classifying the sound of a baby laughing</p>
+    <div class="flex flex-col gap-2">
+        <audio src={babyLaughing} controls class="w-full" />
+        <p class="text-muted-foreground text-xs">Sound Effect by <a href="https://pixabay.com/users/scottishperson-16626294/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=237186">Scottish Guy</a></p>
+    </div>
+    <Image class="border-4 rounded-xs" src={yamnetClassification} alt="Yamnet classifying the sound of a baby laughing, top 3 results are being shown"/>
+</div>
 
-One of the most helpful tools during development was the [MediaPipe Audio Classifier demo](https://mediapipe-studio.webapps.google.com/studio/demo/audio_classifier). It's a live web interface where you can test the classifier with your own audio input. I used it extensively to experiment with different sounds, test threshold values, and get a feel for how the model responds to various chicken imitations before integrating it into my site.
+### Implementation
 
-The integration itself is straightforward. MediaPipe provides a JavaScript library you can load in the browser. You initialize the classifier, feed it audio data from your worklet, and handle the classification results in a callback function. The library handles all the heavy lifting—loading the model, running inference, and returning predictions.
-
-### Yamnet
-
-**Yamnet** is the audio event detection model that powers MediaPipe's audio classifier. It's a neural network trained on [AudioSet](https://research.google.com/audioset/), a large-scale dataset of over 2 million labeled audio clips covering 521 different sound categories.
-
-These categories range from the obvious—like "Dog," "Car," "Speech," and "Music"—to the surprisingly specific—like "Zipper," "Yodeling," and yes, "Chicken, rooster." The model was designed to recognize everyday sounds in uncontrolled environments, which makes it a good fit for real-world applications like this geocache project.
-
-When Yamnet processes an audio clip, it outputs confidence scores for all 521 categories. Each score represents how confident the model is that a particular sound is present in the audio. Scores range from 0.0 (definitely not present) to 1.0 (very confident it's present).
-
-For this project, I filter the results to focus on chicken and rooster-related categories. If the confidence score crosses a threshold—something like 0.4 or 0.5, depending on how strict I want to be—the user's imitation is accepted, and they get the combination to unlock the geocache container.
-
-One interesting challenge was tuning that threshold. Too low, and random background noise might trigger a pass. Too high, and even decent chicken sounds get rejected. Testing with real users (and a lot of personal trial and error) helped me land on a threshold that felt fair and fun.
+TODO!
 
 ## Resources
 

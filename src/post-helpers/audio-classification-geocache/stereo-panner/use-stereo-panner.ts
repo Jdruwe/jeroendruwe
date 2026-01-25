@@ -81,6 +81,7 @@ export const useStereoPanner = () => {
 
   const stopRecording = () => {
     setIsPanning(false);
+    setPan(0);
     void cleanupResources();
   };
 
