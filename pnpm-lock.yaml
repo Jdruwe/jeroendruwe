@@ -87,6 +87,9 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(react@19.2.0)
     devDependencies:
+      '@types/audioworklet':
+        specifier: ^0.0.93
+        version: 0.0.93
       '@types/howler':
         specifier: ^2.2.12
         version: 2.2.12
@@ -1510,6 +1513,9 @@ packages:
 
   '@ts-morph/common@0.27.0':
     resolution: {integrity: sha512-Wf29UqxWDpc+i61k3oIOzcUfQt79PIT9y/MWfAGlrkjg6lBC1hwDECLXPVJAhWjiGbfBCxZd65F/LIZF3+jeJQ==}
+
+  '@types/audioworklet@0.0.93':
+    resolution: {integrity: sha512-OhnOrF6v2qllNXzj2/QA1NDkAKS/0u6VYFjrLDc0X8xXGMzNv6wtpKpFFuT1NmaCN+rkVDOcxLHZpnSjwHcZVA==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -5656,6 +5662,8 @@ snapshots:
       fast-glob: 3.3.3
       minimatch: 10.1.1
       path-browserify: 1.0.1
+
+  '@types/audioworklet@0.0.93': {}
 
   '@types/babel__core@7.20.5':
     dependencies:

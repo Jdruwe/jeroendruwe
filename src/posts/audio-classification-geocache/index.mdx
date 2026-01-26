@@ -16,6 +16,7 @@ import babyLaughing from './assets/baby-laughing.mp3';
 import {NoProse} from '../../components/ui/no-prose.tsx';
 import {AudioRecorder} from "../../post-helpers/audio-classification-geocache/audio-recorder/audio-recorder.tsx";
 import {StereoPanner} from "../../post-helpers/audio-classification-geocache/stereo-panner/stereo-panner.tsx";
+import {WhiteNoiseProcessor} from "../../post-helpers/audio-classification-geocache/white-noise-processor/white-noise-processor.tsx";
 
 I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
 
@@ -121,7 +122,7 @@ Here's how nodes connect:
 2. **Processing nodes** - Modify or analyze the audio (like gain control, filters, or custom processing)
 3. **Destination nodes** - Output the audio (usually to speakers, but can also be to another stream)
 
-Nodes are connected using the `.connect()` method, creating a chain through which audio flows:
+Nodes are connected using the `.connect()` method, creating a chain through which audio flows.
 
 <NoProse>
     <StereoPanner client:load/>
@@ -162,6 +163,49 @@ useEffect(() => {
 
 In this example, audio flows from the microphone → through a stereo panner node → to the speakers.
 
+### AudioWorkletNode
+
+The `AudioWorkletNode` is the modern replacement for the deprecated `ScriptProcessorNode`. Its primary advantage is stability. While the old system ran audio code on the main thread alongside the UI, the `AudioWorklet` runs in a dedicated background thread. This isolation prevents UI lag from causing audio glitches or pops.
+
+#### The Two-Part Architecture
+
+Working with this API requires two distinct components:
+
+1. **`AudioWorkletNode`:** This is the interface you use in your standard JavaScript files. It behaves like any other node in your Web Audio graph, allowing you to connect it to destinations or effects.
+2. **`AudioWorkletProcessor`:** This is where the processing logic lives. You define this in a separate module file. It handles the raw audio buffers through its `process()` method.
+
+<NoProse>
+    <WhiteNoiseProcessor client:load/>
+</NoProse>
+
+### Quick Implementation
+
+**Step 1: The Processor (`processor.js`)**
+
+```javascript
+class MyProcessor extends AudioWorkletProcessor {
+  process(inputs, outputs) {
+    const output = outputs[0];
+    output.forEach(channel => {
+      for (let i = 0; i < channel.length; i++) {
+        channel[i] = Math.random(); // Custom DSP logic
+      }
+    });
+    return true;
+  }
+}
+registerProcessor('my-processor', MyProcessor);
+
+```
+
+**Step 2: The Node (`main.js`)**
+
+```javascript
+await audioContext.audioWorklet.addModule('processor.js');
+const node = new AudioWorkletNode(audioContext, 'my-processor');
+node.connect(audioContext.destination);
+```
+
 ## Audio Classification
 
 For my use case, I needed an audio classification solution that could run entirely client-side. The goal was to have something that works on a mobile device without relying on a server. This requirement ruled out all cloud-based ML APIs and pushed me toward on-device machine learning.
@@ -194,9 +238,12 @@ For my use case, I needed an audio classification solution that could run entire
     </div>
 </div>
 
+## Worker
+
+
 ### Implementation
 
-TODO!
+
 
 ## Resources
 

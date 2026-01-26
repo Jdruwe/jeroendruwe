@@ -37,6 +37,7 @@
     "use-sound": "^5.0.0"
   },
   "devDependencies": {
+    "@types/audioworklet": "^0.0.93",
     "@types/howler": "^2.2.12",
     "@typescript-eslint/parser": "^8.49.0",
     "eslint": "^9.39.1",
