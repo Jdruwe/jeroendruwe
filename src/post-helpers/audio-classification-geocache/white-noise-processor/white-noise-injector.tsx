@@ -18,7 +18,7 @@ const WhiteNoiseInjector = () => {
     useWhiteNoiseInjector();
 
   return (
-    <SpaceRoot className={cn({ 'gap-y-0': !!audioUrl })}>
+    <SpaceRoot gap={!audioUrl}>
       <SpaceHeader>
         <SpaceTitle>White Noise Injector</SpaceTitle>
         <Button

@@ -1,10 +1,28 @@
 import { cn } from '@/lib/utils.ts';
 import { mergeProps, useRender } from '@base-ui/react';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-interface SpaceRootProps extends useRender.ComponentProps<'div'> {}
+const spaceRootVariants = cva(
+  'ring-foreground/10 bg-space shadow-sm text-space-foreground group/space flex flex-col overflow-hidden rounded-xl py-4 text-sm ring-1 has-data-[slot=space-footer]:pb-0',
+  {
+    variants: {
+      gap: {
+        false: null,
+        true: 'gap-4',
+      },
+    },
+    defaultVariants: {
+      gap: true,
+    },
+  },
+);
 
-function SpaceRoot(props: SpaceRootProps) {
-  const { render, className, ...otherProps } = props;
+interface SpaceRootProps
+  extends useRender.ComponentProps<'div'>,
+    VariantProps<typeof spaceRootVariants> {}
+
+function SpaceRoot({ render, className, gap, ...props }: SpaceRootProps) {
+  // const { render, className, ...otherProps } = props;
 
   return useRender({
     defaultTagName: 'div',
@@ -12,12 +30,9 @@ function SpaceRoot(props: SpaceRootProps) {
     props: {
       ...mergeProps<'div'>(
         {
-          className: cn(
-            'ring-foreground/10 bg-space shadow-sm text-space-foreground group/space flex flex-col gap-4 overflow-hidden rounded-xl py-4 text-sm ring-1 has-data-[slot=space-footer]:pb-0',
-            className,
-          ),
+          className: cn(spaceRootVariants({ gap }), className),
         },
-        otherProps,
+        props,
       ),
       'data-slot': 'space-root',
     },

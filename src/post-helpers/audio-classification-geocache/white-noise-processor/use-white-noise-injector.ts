@@ -96,9 +96,7 @@ export const useWhiteNoiseInjector = () => {
       }
 
       mediaStreamRef.current = stream;
-
       audioContextRef.current = new AudioContext();
-
       await audioContextRef.current.audioWorklet.addModule(WhiteNoiseInjector);
       const whiteNoiseProcessorNode = new AudioWorkletNode(
         audioContextRef.current,
@@ -109,7 +107,6 @@ export const useWhiteNoiseInjector = () => {
         audioContextRef.current.createMediaStreamSource(stream);
       audioDestinationNodeRef.current =
         audioContextRef.current.createMediaStreamDestination();
-
       mediaRecorderRef.current = createMediaRecorder(
         audioDestinationNodeRef.current.stream,
       );
@@ -117,7 +114,6 @@ export const useWhiteNoiseInjector = () => {
       audioSourceNodeRef.current.connect(whiteNoiseProcessorNode);
       whiteNoiseProcessorNode.connect(audioDestinationNodeRef.current);
       mediaRecorderRef.current.start();
-
       setIsRecording(true);
     } catch (err) {
       setError('Failed to start recording. Please try again.');
