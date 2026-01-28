@@ -80,6 +80,22 @@
   --space-foreground: oklch(0.985 0 0);
 }
 
+@property --noise-lines {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0.0001px;
+}
+
+@theme {
+  --animate-noise: noise-lines 3s linear infinite;
+
+  @keyframes noise-lines {
+    50% {
+      --noise-lines: 0.00012px;
+    }
+  }
+}
+
 @theme inline {
   --font-mono: 'Geist Mono Variable', monospace;
   --color-sidebar-ring: var(--sidebar-ring);
@@ -135,4 +151,12 @@
   html {
     @apply font-sans;
   }
+}
+
+@utility bg-noise {
+  background: repeating-radial-gradient(
+    circle at center,
+    black 0px var(--noise-lines),
+    transparent var(--noise-lines) calc(var(--noise-lines) * 2)
+  );
 }

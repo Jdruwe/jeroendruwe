@@ -1,15 +1,14 @@
-class WhiteNoiseProcessor extends AudioWorkletProcessor {
+class WhiteNoiseInjector extends AudioWorkletProcessor {
   /**
    * The process method is called every 128 samples (approx. every 2.6ms at 48kHz).
    * @param {Array} inputs - An array of input ports (each containing channel arrays).
    * @param {Array} outputs - An array of output ports (each containing channel arrays).
    */
-  process(inputs, outputs) {
-    // todo: fix typescript issues!
-    // The first input is usually our microphone source
-    const input = inputs[0];
-    // The first output is our destination (e.g., speakers)
-    const output = outputs[0];
+  process(inputs: Float32Array[][], outputs: Float32Array[][]) {
+    const input = inputs[0]; // microphone input
+    const output = outputs[0]; // speaker output
+
+    // todo: comment cleanup!
 
     /**
      * OUTER LOOP: Channels
@@ -18,6 +17,8 @@ class WhiteNoiseProcessor extends AudioWorkletProcessor {
      */
     for (let channel = 0; channel < output.length; channel++) {
       const outputChannel = output[channel];
+
+      console.log('>>> length', outputChannel.length);
 
       /**
        * UPMIXING LOGIC:
@@ -56,6 +57,9 @@ class WhiteNoiseProcessor extends AudioWorkletProcessor {
           outputChannel[i] = inputChannel[i] * 0.9 + noise;
         }
       } else {
+        console.log(
+          '>>> no input channel detected, generating only white noise',
+        );
         /**
          * FALLBACK:
          * If no microphone input is detected (e.g., stream not yet started),
@@ -71,4 +75,4 @@ class WhiteNoiseProcessor extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor('white-noise-processor', WhiteNoiseProcessor);
+registerProcessor('white-noise-injector', WhiteNoiseInjector);

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import WhiteNoiseProcessor from './white-noise-processor.ts?worker&url';
+import WhiteNoiseInjector from './white-noise-injector.ts?worker&url';
 
-export const useWhiteNoiseProcessor = () => {
+export const useWhiteNoiseInjector = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +28,7 @@ export const useWhiteNoiseProcessor = () => {
     mediaStream.getTracks().forEach((track) => track.stop());
   };
 
+  // todo: update this, stuff is missing
   const cleanupResources = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.onstop = null;
@@ -98,10 +99,10 @@ export const useWhiteNoiseProcessor = () => {
 
       audioContextRef.current = new AudioContext();
 
-      await audioContextRef.current.audioWorklet.addModule(WhiteNoiseProcessor);
+      await audioContextRef.current.audioWorklet.addModule(WhiteNoiseInjector);
       const whiteNoiseProcessorNode = new AudioWorkletNode(
         audioContextRef.current,
-        'white-noise-processor',
+        'white-noise-injector',
       );
 
       audioSourceNodeRef.current =
