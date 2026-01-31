@@ -1,21 +1,45 @@
 import { useState, useRef, useEffect } from 'react';
-import WhiteNoiseInjector from './white-noise-injector.ts?worker&url';
+import BufferedAudioProcessor from './buffered-audio-processor.ts?worker&url';
 
-export const useWhiteNoiseInjector = () => {
+import { FilesetResolver, AudioClassifier } from '@mediapipe/tasks-audio';
+
+const SAMPLE_RATE = 16000;
+
+type Category = {
+  label: string;
+  score: number;
+};
+
+export const useAudioClassification = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const isMountedRef = useRef(false);
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
+  const audioClassifierRef = useRef<AudioClassifier | null>(null);
   const audioContextRef = useRef<AudioContext>(null);
-  const whiteNoiseInjectorNodeRef = useRef<AudioWorkletNode>(null);
+  const bufferAudioProcessorNodeRef = useRef<AudioWorkletNode>(null);
   const audioSourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const audioDestinationNodeRef =
     useRef<MediaStreamAudioDestinationNode | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  const createAudioClassifier = async (): Promise<AudioClassifier> => {
+    const audio = await FilesetResolver.forAudioTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@0.10.22-rc.20250304/wasm',
+    );
+    return AudioClassifier.createFromOptions(audio, {
+      baseOptions: {
+        modelAssetPath:
+          'https://storage.googleapis.com/mediapipe-models/audio_classifier/yamnet/float32/1/yamnet.tflite',
+      },
+      maxResults: 5,
+    });
+  };
 
   const stopMediaRecorder = () => {
     if (mediaRecorderRef.current?.state !== 'inactive') {
@@ -38,7 +62,7 @@ export const useWhiteNoiseInjector = () => {
 
     [
       audioSourceNodeRef,
-      whiteNoiseInjectorNodeRef,
+      bufferAudioProcessorNodeRef,
       audioDestinationNodeRef,
     ].forEach((ref) => {
       if (ref.current) {
@@ -97,6 +121,32 @@ export const useWhiteNoiseInjector = () => {
     return recorder;
   };
 
+  const handleProcessorMessage = (event: MessageEvent) => {
+    if (event.data.type === 'audio') {
+      if (!audioClassifierRef.current) return;
+
+      try {
+        const results = audioClassifierRef.current.classify(
+          event.data.data,
+          SAMPLE_RATE,
+        );
+
+        const nextCategories = results[0].classifications[0].categories.map(
+          (category) => {
+            return {
+              label: category.categoryName,
+              score: category.score,
+            };
+          },
+        );
+
+        setCategories(nextCategories);
+      } catch (error) {
+        // todo: error handling!
+      }
+    }
+  };
+
   const startRecording = async () => {
     try {
       await reset();
@@ -109,11 +159,18 @@ export const useWhiteNoiseInjector = () => {
       }
 
       mediaStreamRef.current = stream;
-      audioContextRef.current = new AudioContext();
-      await audioContextRef.current.audioWorklet.addModule(WhiteNoiseInjector);
-      whiteNoiseInjectorNodeRef.current = new AudioWorkletNode(
+      audioContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE });
+      await audioContextRef.current.audioWorklet.addModule(
+        BufferedAudioProcessor,
+      );
+      bufferAudioProcessorNodeRef.current = new AudioWorkletNode(
         audioContextRef.current,
-        'white-noise-injector',
+        'buffered-audio-processor',
+        {
+          processorOptions: {
+            bufferSize: SAMPLE_RATE,
+          },
+        },
       );
 
       audioSourceNodeRef.current =
@@ -124,8 +181,11 @@ export const useWhiteNoiseInjector = () => {
         audioDestinationNodeRef.current.stream,
       );
 
-      audioSourceNodeRef.current.connect(whiteNoiseInjectorNodeRef.current);
-      whiteNoiseInjectorNodeRef.current.connect(
+      audioClassifierRef.current = await createAudioClassifier();
+      bufferAudioProcessorNodeRef.current.port.onmessage =
+        handleProcessorMessage;
+      audioSourceNodeRef.current.connect(bufferAudioProcessorNodeRef.current);
+      bufferAudioProcessorNodeRef.current.connect(
         audioDestinationNodeRef.current,
       );
       mediaRecorderRef.current.start();
@@ -141,5 +201,12 @@ export const useWhiteNoiseInjector = () => {
     setIsRecording(false);
   };
 
-  return { isRecording, audioUrl, error, startRecording, stopRecording };
+  return {
+    isRecording,
+    audioUrl,
+    error,
+    startRecording,
+    stopRecording,
+    categories,
+  };
 };

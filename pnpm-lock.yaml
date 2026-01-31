@@ -32,6 +32,9 @@ importers:
       '@lucide/astro':
         specifier: ^0.560.0
         version: 0.560.0(astro@5.16.6(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.53.1)(typescript@5.9.3))
+      '@mediapipe/tasks-audio':
+        specifier: 0.10.22-rc.20250304
+        version: 0.10.22-rc.20250304
       '@tailwindcss/vite':
         specifier: ^4.1.17
         version: 4.1.17(vite@6.4.1(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2))
@@ -1192,6 +1195,9 @@ packages:
 
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
+
+  '@mediapipe/tasks-audio@0.10.22-rc.20250304':
+    resolution: {integrity: sha512-3rUl/8/+/J7kkoGU2a6mLQnBpw5KktsKmBKtL50GopzBUE0vd8D0dXwGPHAL2tIRYiQ1TMv1UDJSPrRrHTbnPA==}
 
   '@modelcontextprotocol/sdk@1.25.3':
     resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
@@ -5386,6 +5392,8 @@ snapshots:
       vfile: 6.0.3
     transitivePeerDependencies:
       - supports-color
+
+  '@mediapipe/tasks-audio@0.10.22-rc.20250304': {}
 
   '@modelcontextprotocol/sdk@1.25.3(hono@4.11.5)(zod@3.25.76)':
     dependencies:

@@ -84,57 +84,6 @@ const StereoPanner = () => {
       </SpaceFooter>
     </SpaceRoot>
   );
-
-  // return (
-  //   <div
-  //     style={{
-  //       padding: '30px',
-  //       textAlign: 'center',
-  //       border: '2px solid #61dafb',
-  //       borderRadius: '15px',
-  //     }}
-  //   >
-  //     <h3>Spatial Audio Demo</h3>
-  //     <p>This node "moves" your voice in 3D space.</p>
-  //
-  //     {!isActive ? (
-  //       <button
-  //         onClick={startAudio}
-  //         style={{ padding: '10px 20px', cursor: 'pointer' }}
-  //       >
-  //         Enable Spatial Mic
-  //       </button>
-  //     ) : (
-  //       <div style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
-  //         <div
-  //           style={{
-  //             display: 'flex',
-  //             justifyContent: 'space-between',
-  //             marginBottom: '10px',
-  //           }}
-  //         >
-  //           <span>LEFT</span>
-  //           <span>CENTER</span>
-  //           <span>RIGHT</span>
-  //         </div>
-  //
-  //         <input
-  //           type="range"
-  //           min="-1"
-  //           max="1"
-  //           step="0.1"
-  //           value={panValue}
-  //           onChange={handlePanChange}
-  //           style={{ width: '100%', cursor: 'pointer' }}
-  //         />
-  //
-  //         <div style={{ marginTop: '20px', fontSize: '2rem' }}>
-  //           {panValue < -0.2 ? '⬅️' : panValue > 0.2 ? '➡️' : '⏺️'}
-  //         </div>
-  //       </div>
-  //     )}
-  //   </div>
-  // );
 };
 
 export { StereoPanner };

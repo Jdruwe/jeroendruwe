@@ -17,6 +17,7 @@ import {NoProse} from '../../components/ui/no-prose.tsx';
 import {AudioRecorder} from "../../post-helpers/audio-classification-geocache/audio-recorder/audio-recorder.tsx";
 import {StereoPanner} from "../../post-helpers/audio-classification-geocache/stereo-panner/stereo-panner.tsx";
 import {WhiteNoiseInjector} from "../../post-helpers/audio-classification-geocache/white-noise-processor/white-noise-injector.tsx";
+import {AudioClassification} from "../../post-helpers/audio-classification-geocache/audio-classification/audio-classification.tsx";
 
 I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
 
@@ -106,15 +107,7 @@ const startRecording = async () => {
 
 ## Controlling Audio Flow
 
-TODO: update text below!
-
-Recording audio with MediaRecorder works fine for playback, but for real-time audio classification, I needed something more powerful. That's where the [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) comes in.
-
-The Web Audio API is designed for processing and synthesizing audio in the browser. Unlike MediaRecorder, which simply records chunks of audio, the Web Audio API gives you fine-grained control over audio streams through a modular system of **audio nodes**.
-
-### Audio Nodes and the Audio Graph
-
-The core concept of the Web Audio API is the **audio graph**—a network of audio nodes connected together. Each node performs a specific function, like capturing input, applying effects, analyzing frequency data, or outputting to speakers.
+The core concept of the [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) is the **audio graph**—a network of audio nodes connected together. Each node performs a specific function, like capturing input, applying effects, analyzing frequency data, or outputting to speakers.
 
 Here's how nodes connect:
 
@@ -122,7 +115,7 @@ Here's how nodes connect:
 2. **Processing nodes** - Modify or analyze the audio (like gain control, filters, or custom processing)
 3. **Destination nodes** - Output the audio (usually to speakers, but can also be to another stream)
 
-Nodes are connected using the `.connect()` method, creating a chain through which audio flows.
+Nodes are connected using the `.connect()` method, creating a chain through which audio flows. Below a small demo showcasing a StereoPannerNode to control left-right balance of the microphone input.
 
 <NoProse>
     <StereoPanner client:load/>
@@ -161,20 +154,11 @@ useEffect(() => {
 />
 ```
 
-In this example, audio flows from the microphone → through a stereo panner node → to the speakers.
+### AudioWorkletProcessor
 
-### AudioWorkletNode
+AudioWorkletProcessor is where custom, real-time audio processing happens in the Web Audio API. It runs on the browser’s dedicated audio rendering thread (not the main UI thread). While it is not an AudioNode itself, it defines the processing behavior for a browser-managed node, which is exposed to the main thread as an AudioWorkletNode. The processor receives audio in small fixed-size blocks, applies your custom logic, and outputs the result back into the audio graph.
 
-TODO: this text needs to be updated!
-
-The `AudioWorkletNode` is the modern replacement for the deprecated `ScriptProcessorNode`. Its primary advantage is stability. While the old system ran audio code on the main thread alongside the UI, the `AudioWorklet` runs in a dedicated background thread. This isolation prevents UI lag from causing audio glitches or pops.
-
-#### The Two-Part Architecture
-
-Working with this API requires two distinct components:
-
-1. **`AudioWorkletNode`:** This is the interface you use in your standard JavaScript files. It behaves like any other node in your Web Audio graph, allowing you to connect it to destinations or effects.
-2. **`AudioWorkletProcessor`:** This is where the processing logic lives. You define this in a separate module file. It handles the raw audio buffers through its `process()` method.
+Below you can see such processor in action, receiving microphone input, injecting white noise, and sending the mixed output to the speakers.
 
 <NoProse>
     <WhiteNoiseInjector client:load/>
@@ -288,11 +272,11 @@ For my use case, I needed an audio classification solution that could run entire
     </div>
 </div>
 
-## Worker
+## Putting It All Together
 
-
-### Implementation
-
+<NoProse>
+    <AudioClassification client:load/>
+</NoProse>
 
 
 ## Resources
