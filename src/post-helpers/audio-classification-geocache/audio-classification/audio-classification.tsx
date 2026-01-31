@@ -10,17 +10,11 @@ import { MicIcon, SquareIcon } from 'lucide-react';
 import { useAudioClassification } from '@/post-helpers/audio-classification-geocache/audio-classification/use-audio-classification.ts';
 
 const AudioClassification = () => {
-  const {
-    isRecording,
-    startRecording,
-    stopRecording,
-    audioUrl,
-    error,
-    categories,
-  } = useAudioClassification();
+  const { status, startClassification, stopClassification, categories } =
+    useAudioClassification();
 
   return (
-    <SpaceRoot gap={!audioUrl}>
+    <SpaceRoot>
       <SpaceHeader>
         <SpaceTitle>Audio Classification</SpaceTitle>
         <Button
@@ -36,35 +30,47 @@ const AudioClassification = () => {
         />
       </SpaceHeader>
       <SpaceContent>
-        {!isRecording && !audioUrl && (
+        {(status === 'idle' || status === 'starting') && (
           <p className="text-muted-foreground mx-auto w-fit">
-            Click "Start recording" below to check out audio classification.
+            No classification happening right now.
           </p>
         )}
-        {isRecording && (
-          <ul>
-            {categories.map((category) => (
-              <li key={category.label}>
-                {category.label}: {(category.score * 100).toFixed(2)}%
-              </li>
-            ))}
-          </ul>
+        {(status === 'running' || status === 'stopping') && (
+          <div className="flex flex-wrap gap-3">
+            <ul className="list-inside list-disc">
+              {categories.length === 0 && <li>Detection loading...</li>}
+              {categories.map((category) => (
+                <li key={category.label}>
+                  {category.label}: {(category.score * 100).toFixed(2)}%
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
-        {!!audioUrl && <audio src={audioUrl} controls className="w-full" />}
-        {!!error && <p className="mx-auto w-fit text-red-500">{error}</p>}
+        {status === 'error' && (
+          <p className="mx-auto w-fit text-red-500">
+            Audio classification failed
+          </p>
+        )}
       </SpaceContent>
       <SpaceFooter>
-        {isRecording ? (
+        {(status === 'idle' || status === 'starting' || status === 'error') && (
           <Button
-            onClick={stopRecording}
+            onClick={startClassification}
+            className="w-full"
+            disabled={status === 'starting'}
+          >
+            <MicIcon /> Start classification
+          </Button>
+        )}
+        {(status === 'running' || status === 'stopping') && (
+          <Button
+            onClick={stopClassification}
             variant="destructive"
             className="w-full"
+            disabled={status === 'stopping'}
           >
-            <SquareIcon /> Stop recording
-          </Button>
-        ) : (
-          <Button onClick={startRecording} className="w-full">
-            <MicIcon /> Start recording
+            <SquareIcon /> Stop classification
           </Button>
         )}
       </SpaceFooter>

@@ -10,10 +10,10 @@ type Category = {
   score: number;
 };
 
+type Status = 'idle' | 'starting' | 'running' | 'stopping' | 'error';
+
 export const useAudioClassification = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>('idle');
   const [categories, setCategories] = useState<Category[]>([]);
 
   const isMountedRef = useRef(false);
@@ -25,8 +25,6 @@ export const useAudioClassification = () => {
   const audioSourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const audioDestinationNodeRef =
     useRef<MediaStreamAudioDestinationNode | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   const createAudioClassifier = async (): Promise<AudioClassifier> => {
     const audio = await FilesetResolver.forAudioTasks(
@@ -41,25 +39,11 @@ export const useAudioClassification = () => {
     });
   };
 
-  const stopMediaRecorder = () => {
-    if (mediaRecorderRef.current?.state !== 'inactive') {
-      mediaRecorderRef.current?.stop();
-    }
-  };
-
   const stopStreamTracks = (mediaStream: MediaStream) => {
     mediaStream.getTracks().forEach((track) => track.stop());
   };
 
   const cleanupResources = async () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.onstop = null;
-      mediaRecorderRef.current.ondataavailable = null;
-
-      stopMediaRecorder();
-      mediaRecorderRef.current = null;
-    }
-
     [
       audioSourceNodeRef,
       bufferAudioProcessorNodeRef,
@@ -70,6 +54,8 @@ export const useAudioClassification = () => {
         ref.current = null;
       }
     });
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     if (mediaStreamRef.current) {
       stopStreamTracks(mediaStreamRef.current);
@@ -84,16 +70,9 @@ export const useAudioClassification = () => {
 
   const reset = async () => {
     await cleanupResources();
-    setError(null);
-    setAudioUrl(null);
-    audioChunksRef.current = [];
+    setStatus('idle');
+    setCategories([]);
   };
-
-  useEffect(() => {
-    return () => {
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-    };
-  }, [audioUrl]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -103,23 +82,6 @@ export const useAudioClassification = () => {
       void cleanupResources();
     };
   }, []);
-
-  const createMediaRecorder = (stream: MediaStream) => {
-    const recorder = new MediaRecorder(stream);
-
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) audioChunksRef.current.push(e.data);
-    };
-
-    recorder.onstop = () => {
-      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      const url = URL.createObjectURL(blob);
-      setAudioUrl(url);
-      void cleanupResources();
-    };
-
-    return recorder;
-  };
 
   const handleProcessorMessage = (event: MessageEvent) => {
     if (event.data.type === 'audio') {
@@ -142,13 +104,15 @@ export const useAudioClassification = () => {
 
         setCategories(nextCategories);
       } catch (error) {
-        // todo: error handling!
+        setStatus('error');
       }
     }
   };
 
-  const startRecording = async () => {
+  const startClassification = async () => {
     try {
+      setStatus('starting');
+
       await reset();
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -177,9 +141,6 @@ export const useAudioClassification = () => {
         audioContextRef.current.createMediaStreamSource(stream);
       audioDestinationNodeRef.current =
         audioContextRef.current.createMediaStreamDestination();
-      mediaRecorderRef.current = createMediaRecorder(
-        audioDestinationNodeRef.current.stream,
-      );
 
       audioClassifierRef.current = await createAudioClassifier();
       bufferAudioProcessorNodeRef.current.port.onmessage =
@@ -188,25 +149,23 @@ export const useAudioClassification = () => {
       bufferAudioProcessorNodeRef.current.connect(
         audioDestinationNodeRef.current,
       );
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-    } catch (err) {
-      setError('Failed to start recording. Please try again.');
-      setIsRecording(false);
+
+      setStatus('running');
+    } catch (error) {
+      setStatus('error');
     }
   };
 
-  const stopRecording = () => {
-    stopMediaRecorder();
-    setIsRecording(false);
+  const stopClassification = async () => {
+    setStatus('stopping');
+    await cleanupResources();
+    setStatus('idle');
   };
 
   return {
-    isRecording,
-    audioUrl,
-    error,
-    startRecording,
-    stopRecording,
+    status,
+    startClassification,
+    stopClassification,
     categories,
   };
 };
