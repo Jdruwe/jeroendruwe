@@ -55,8 +55,6 @@ export const useAudioClassification = () => {
       }
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     if (mediaStreamRef.current) {
       stopStreamTracks(mediaStreamRef.current);
       mediaStreamRef.current = null;
