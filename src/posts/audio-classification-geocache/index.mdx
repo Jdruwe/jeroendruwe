@@ -1,6 +1,6 @@
 ---
 title: "The Geocache That Listens: Building an Audio Classification Puzzle"
-pubDate: 2026-01-13T17:30:00Z
+pubDate: 2026-02-02T17:00:00Z
 description: "I built a geocache that uses real-time audio classification to verify chicken sound imitations. Cachers scan a QR code, cluck into their phone, and get an unlock code if the browser thinks they sound convincing enough."
 tags: []
 draft: true
@@ -46,7 +46,7 @@ The core of this API is [`getUserMedia()`](https://developer.mozilla.org/en-US/d
 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 ```
 
-The `MediaStream` represents a stream of media content, in this case audio data from the microphone. This stream can be used in multiple ways—recording it with MediaRecorder, processing it with the Web Audio API, or even streaming it to another user in a WebRTC call.
+The `MediaStream` represents a stream of media content, in this case audio data from the microphone. This stream can be used in multiple ways like recording it with MediaRecorder, processing it with the Web Audio API, or even streaming it to another user in a WebRTC call.
 
 ## Recording Audio
 
@@ -107,7 +107,7 @@ const startRecording = async () => {
 
 ## Controlling Audio Flow
 
-The core concept of the [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) is the **audio graph**—a network of audio nodes connected together. Each node performs a specific function, like capturing input, applying effects, analyzing frequency data, or outputting to speakers.
+The core concept of the [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) is the **audio graph**, a network of audio nodes connected together. Each node performs a specific function, like capturing input, applying effects, analyzing frequency data, or outputting to speakers.
 
 Here's how nodes connect:
 
@@ -274,15 +274,25 @@ For my use case, I needed an audio classification solution that could run entire
 
 ## Putting It All Together
 
+Below a live demo of the audio classification in action. Try making different sounds into your microphone and see how the model classifies them in real-time!
+
 <NoProse>
     <AudioClassification client:load/>
 </NoProse>
 
-TODO: write text here!
+In the demo I am not actually recording audio. But you could easily add a MediaRecorder passing the destination stream from the AudioContext.
 
-In my demo above I am not actually recording audio, just classifying it in real-time. But you could easily combine the recording and classification logic to build a full-fledged audio verification system like the geocache.
+In my geocache I even added a score multiplier and the option to enable easy-mode as it proved really hard for a human to convincingly imitate a chicken. These 2 settings helped balance the difficulty and made the game more enjoyable.
 
-In my geocache I even added a score multiplier as it proved really hard for a human to sound exactly like a chicken.
+## And Now The Sad Part...
+
+After building the entire system and deploying it to production, I submitted the geocache for review on Geocaching.com. The reviewers rejected it.
+
+The issue wasn't technical. The game worked perfectly. The problem was that Geocaching.com's current guidelines don't account for machine learning based caches.
+
+I'm hoping Geocaching.com will eventually update their guidelines. Tech opens up entirely new types of challenges: sound recognition, image classification, gesture detection, all running client-side on a phone. For now, though, the geocache remains a technical demo rather than a live treasure hunt.
+
+If you're considering building something similar, I'd recommend reaching out to your local reviewer first to discuss feasibility. The tech works great. It's the policy that needs catching up.
 
 ## Resources
 
