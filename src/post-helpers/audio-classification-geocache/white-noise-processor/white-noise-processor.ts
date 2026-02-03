@@ -1,4 +1,4 @@
-class WhiteNoiseInjector extends AudioWorkletProcessor {
+class WhiteNoiseProcessor extends AudioWorkletProcessor {
   /**
    * The process method is called every 128 samples (approx. every 2.6ms at 48kHz).
    * @param {Array} inputs - An array of input ports (each containing channel arrays).
@@ -46,4 +46,4 @@ class WhiteNoiseInjector extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor('white-noise-injector', WhiteNoiseInjector);
+registerProcessor('white-noise-processor', WhiteNoiseProcessor);

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import WhiteNoiseInjector from './white-noise-injector.ts?worker&url';
+import WhiteNoiseProcessor from './white-noise-processor.ts?worker&url';
 
 export const useWhiteNoiseInjector = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -110,10 +110,10 @@ export const useWhiteNoiseInjector = () => {
 
       mediaStreamRef.current = stream;
       audioContextRef.current = new AudioContext();
-      await audioContextRef.current.audioWorklet.addModule(WhiteNoiseInjector);
+      await audioContextRef.current.audioWorklet.addModule(WhiteNoiseProcessor);
       whiteNoiseInjectorNodeRef.current = new AudioWorkletNode(
         audioContextRef.current,
-        'white-noise-injector',
+        'white-noise-processor',
       );
 
       audioSourceNodeRef.current =

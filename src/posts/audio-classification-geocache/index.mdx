@@ -1,11 +1,13 @@
 ---
-title: "The Geocache That Listens: Building an Audio Classification Puzzle"
+title: 'The Geocache That Listens: Building an Audio Classification Puzzle'
 pubDate: 2026-02-02T17:00:00Z
-description: "I built a geocache that uses real-time audio classification to verify chicken sound imitations. Cachers scan a QR code, cluck into their phone, and get an unlock code if the browser thinks they sound convincing enough."
+description: 'I built a geocache that uses real-time audio classification to verify chicken sound imitations. Cachers scan a QR code, cluck into their phone, and get an unlock code if the browser thinks they sound convincing enough.'
 tags: []
 draft: true
 ---
-import {Image} from 'astro:assets';
+
+import { Image } from 'astro:assets';
+
 import geocacheContainer from './assets/geocache-container.jpeg';
 import geocacheIntro from './assets/geocache-intro.jpg';
 import geocacheGame from './assets/geocache-game.jpg';
@@ -13,21 +15,38 @@ import geocacheWinner from './assets/geocache-winner.jpg';
 import yamnetClasses from './assets/yamnet-classes.jpg';
 import yamnetClassification from './assets/yamnet-classification.jpg';
 import babyLaughing from './assets/baby-laughing.mp3';
-import {NoProse} from '../../components/ui/no-prose.tsx';
-import {AudioRecorder} from "../../post-helpers/audio-classification-geocache/audio-recorder/audio-recorder.tsx";
-import {StereoPanner} from "../../post-helpers/audio-classification-geocache/stereo-panner/stereo-panner.tsx";
-import {WhiteNoiseInjector} from "../../post-helpers/audio-classification-geocache/white-noise-processor/white-noise-injector.tsx";
-import {AudioClassification} from "../../post-helpers/audio-classification-geocache/audio-classification/audio-classification.tsx";
+
+import { NoProse } from '../../components/ui/no-prose.tsx';
+import { AudioRecorder } from '../../post-helpers/audio-classification-geocache/audio-recorder';
+import { StereoPanner } from '../../post-helpers/audio-classification-geocache/stereo-panner';
+import { WhiteNoiseInjector } from '../../post-helpers/audio-classification-geocache/white-noise-processor';
+import { AudioClassification } from '../../post-helpers/audio-classification-geocache/audio-classification';
 
 I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
 
 This post covers how I built it, from capturing audio with the Web Audio API to running machine learning models in the browser.
 
-<div class="max-w-lg mx-auto">
-    <Image class="border-4 rounded-xs" src={geocacheContainer} alt="Geocache container"/>
-    <Image class="border-4 rounded-xs" src={geocacheIntro} alt="Intro to the geocache game"/>
-    <Image class="border-4 rounded-xs" src={geocacheGame} alt="Imitating a chicken"/>
-    <Image class="border-4 rounded-xs" src={geocacheWinner} alt="Code to unlock the container"/>
+<div class="mx-auto max-w-lg">
+  <Image
+    class="rounded-xs border-4"
+    src={geocacheContainer}
+    alt="Geocache container"
+  />
+  <Image
+    class="rounded-xs border-4"
+    src={geocacheIntro}
+    alt="Intro to the geocache game"
+  />
+  <Image
+    class="rounded-xs border-4"
+    src={geocacheGame}
+    alt="Imitating a chicken"
+  />
+  <Image
+    class="rounded-xs border-4"
+    src={geocacheWinner}
+    alt="Code to unlock the container"
+  />
 </div>
 
 ## Geocache
@@ -46,11 +65,9 @@ The core of this API is [`getUserMedia()`](https://developer.mozilla.org/en-US/d
 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 ```
 
-The `MediaStream` represents a stream of media content, in this case audio data from the microphone. This stream can be used in multiple ways like recording it with MediaRecorder, processing it with the Web Audio API, or even streaming it to another user in a WebRTC call.
-
 ## Recording Audio
 
-Once I had access to the microphone via `getUserMedia()`, I needed a way to actually record and store the audio. [MediaStream Recording API](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API) to the rescue.
+Once I had access to the microphone input, I needed a way to actually record and store the audio. [MediaStream Recording API](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API) to the rescue.
 
 The [`MediaRecorder`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) interface takes a `MediaStream` and records it into chunks of data. You attach event handlers to collect these chunks, and when recording stops, you combine them into a single audio file (typically a Blob) that can be played back or sent to a server.
 
@@ -67,7 +84,7 @@ Here's how MediaRecorder works in practice:
 Here's a basic recording demo to see it in action:
 
 <NoProse>
-    <AudioRecorder client:load/>
+  <AudioRecorder client:load />
 </NoProse>
 
 ```tsx
@@ -118,7 +135,7 @@ Here's how nodes connect:
 Nodes are connected using the `.connect()` method, creating a chain through which audio flows. Below a small demo showcasing a StereoPannerNode to control left-right balance of the microphone input.
 
 <NoProse>
-    <StereoPanner client:load/>
+  <StereoPanner client:load />
 </NoProse>
 
 ```tsx
@@ -161,13 +178,13 @@ AudioWorkletProcessor is where custom, real-time audio processing happens in the
 Below you can see such processor in action, receiving microphone input, injecting white noise, and sending the mixed output to the speakers.
 
 <NoProse>
-    <WhiteNoiseInjector client:load/>
+  <WhiteNoiseInjector client:load />
 </NoProse>
 
 ```ts {43, 51}
 // white-noise-processor.ts
 
-class WhiteNoiseInjector extends AudioWorkletProcessor {
+class WhiteNoiseProcessor extends AudioWorkletProcessor {
   /**
    * The process method is called every 128 samples (approx. every 2.6ms at 48kHz).
    * @param {Array} inputs - An array of input ports (each containing channel arrays).
@@ -215,7 +232,7 @@ class WhiteNoiseInjector extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor('white-noise-injector', WhiteNoiseInjector);
+registerProcessor('white-noise-processor', WhiteNoiseProcessor);
 ```
 
 ```ts {7-10}
@@ -223,11 +240,11 @@ registerProcessor('white-noise-injector', WhiteNoiseInjector);
 
 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 const audioContext = new AudioContext();
-await audioContext.audioWorklet.addModule(WhiteNoiseInjector);
+await audioContext.audioWorklet.addModule(WhiteNoiseProcessor);
 
 const whiteNoiseProcessorNode = new AudioWorkletNode(
   audioContext,
-  'white-noise-injector',
+  'white-noise-processor',
 );
 
 const audioSourceNode = audioContext.createMediaStreamSource(stream);
@@ -242,7 +259,7 @@ mediaRecorder.start();
 
 ## Audio Classification
 
-For my use case, I needed an audio classification solution that could run entirely client-side. The goal was to have something that works on a mobile device without relying on a server. This requirement ruled out all cloud-based ML APIs and pushed me toward on-device machine learning.
+For my use case, I needed an audio classification solution that could run entirely client-side. The goal was to have something that works on a mobile device without relying on a server.
 
 ### MediaPipe Studio
 
@@ -250,26 +267,40 @@ For my use case, I needed an audio classification solution that could run entire
 
 #### Technical Details
 
-* **Model:** It leverages **[YAMNet](https://www.kaggle.com/models/google/yamnet)**, a deep neural network capable of predicting 521 different audio event classes based on the AudioSet dataset.
-* **Configuration:** You can adjust inference settings such as **Score threshold** (to filter out low-confidence predictions) and **Max results** (to limit the number of detected categories).
-* **Supported SDKs:** MediaPipe provides native libraries across several environments: **Web:** JavaScript / TypeScript (see this [official CodePen example](https://codepen.io/mediapipe-preview/pen/wvxYYmy)), **Android:** Java / Kotlin & **Python**.
+- **Model:** It leverages **[YAMNet](https://www.kaggle.com/models/google/yamnet)**, a deep neural network capable of predicting 521 different audio event classes based on the AudioSet dataset.
+- **Configuration:** You can adjust inference settings such as **Score threshold** (to filter out low-confidence predictions) and **Max results** (to limit the number of detected categories).
+- **Supported SDKs:** MediaPipe provides native libraries across several environments: **Web:** JavaScript / TypeScript (see this [official CodePen example](https://codepen.io/mediapipe-preview/pen/wvxYYmy)), **Android:** Java / Kotlin & **Python**.
 
-<div class="max-w-lg mx-auto flex flex-col gap-5 not-prose">
-    <div class="flex flex-col gap-2">
-        <Image class="border-4 rounded-xs" src={yamnetClasses} alt="Classes supported by the Yamnet deep net"/>
-        <p class="text-muted-foreground text-xs">Subset of by YamNet recognized classes</p>
-    </div>
-    <div class="flex flex-col gap-2">
-        <audio src={babyLaughing} controls class="w-full"/>
-        <p class="text-muted-foreground text-xs">Sound Effect by <a
-            href="https://pixabay.com/users/scottishperson-16626294/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=237186">Scottish
-            Guy</a></p>
-    </div>
-    <div class="flex flex-col gap-2">
-        <Image class="border-4 rounded-xs" src={yamnetClassification}
-               alt="Yamnet classifying the sound of a baby laughing, top 3 results are being shown"/>
-        <p class="text-muted-foreground text-xs">YamNet classifying the sound of a baby laughing</p>
-    </div>
+<div class="not-prose mx-auto flex max-w-lg flex-col gap-5">
+  <div class="flex flex-col gap-2">
+    <Image
+      class="rounded-xs border-4"
+      src={yamnetClasses}
+      alt="Classes supported by the Yamnet deep net"
+    />
+    <p class="text-muted-foreground text-xs">
+      Subset of by YamNet recognized classes
+    </p>
+  </div>
+  <div class="flex flex-col gap-2">
+    <audio src={babyLaughing} controls class="w-full" />
+    <p class="text-muted-foreground text-xs">
+      Sound Effect by{' '}
+      <a href="https://pixabay.com/users/scottishperson-16626294/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=237186">
+        Scottish Guy
+      </a>
+    </p>
+  </div>
+  <div class="flex flex-col gap-2">
+    <Image
+      class="rounded-xs border-4"
+      src={yamnetClassification}
+      alt="Yamnet classifying the sound of a baby laughing, top 3 results are being shown"
+    />
+    <p class="text-muted-foreground text-xs">
+      YamNet classifying the sound of a baby laughing
+    </p>
+  </div>
 </div>
 
 ## Putting It All Together
@@ -277,14 +308,88 @@ For my use case, I needed an audio classification solution that could run entire
 Below a live demo of the audio classification in action. Try making different sounds into your microphone and see how the model classifies them in real-time!
 
 <NoProse>
-    <AudioClassification client:load/>
+  <AudioClassification client:load />
 </NoProse>
+
+```ts
+// use-audio-classification.ts
+
+const SAMPLE_RATE = 16000;
+
+const createAudioClassifier = async (): Promise<AudioClassifier> => {
+  /**
+    * WebAssembly is a type of code that can be run in modern web browsers.
+    * It is a low-level assembly-like language with a compact binary format that runs with
+    * near-native performance and provides languages such as C/C++, C# and Rust with a compilation target so that they can run on the web.
+   */
+  const audio = await FilesetResolver.forAudioTasks(
+    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@0.10.22-rc.20250304/wasm',
+  );
+  return AudioClassifier.createFromOptions(audio, {
+    baseOptions: {
+      modelAssetPath:
+        'https://storage.googleapis.com/mediapipe-models/audio_classifier/yamnet/float32/1/yamnet.tflite',
+    },
+    maxResults: 5, // Limit to top 5 results
+  });
+};
+
+const startClassification = async () => {
+  try {
+    setStatus('starting');
+    ...
+    audioContextRef.current = new AudioContext({ sampleRate: SAMPLE_RATE });
+    await audioContextRef.current.audioWorklet.addModule(
+      BufferedAudioProcessor,
+    );
+    bufferAudioProcessorNodeRef.current = new AudioWorkletNode(
+      audioContextRef.current,
+      'buffered-audio-processor',
+      {
+        processorOptions: {
+          bufferSize: SAMPLE_RATE,
+        },
+      },
+    );
+    ...
+    setStatus('running');
+  } catch (error) {
+    setStatus('error');
+  }
+};
+
+
+// AudioWorkletProcessor transfers audio data to the main thread via messages.
+const handleProcessorMessage = (event: MessageEvent) => {
+  if (event.data.type === 'audio') {
+    try {
+      const results = audioClassifierRef.current.classify(
+        event.data.data,
+        SAMPLE_RATE,
+      );
+
+      const nextCategories = results[0].classifications[0].categories.map(
+        (category) => {
+          return {
+            label: category.categoryName,
+            score: category.score,
+          };
+        },
+      );
+
+      setCategories(nextCategories);
+    } catch (error) {
+      setStatus('error');
+    }
+  }
+};
+```
 
 In the demo I am not actually recording audio. But you could easily add a MediaRecorder passing the destination stream from the AudioContext.
 
 In my geocache I even added a score multiplier and the option to enable easy-mode as it proved really hard for a human to convincingly imitate a chicken. These 2 settings helped balance the difficulty and made the game more enjoyable.
 
-## And Now The Sad Part...
+## Sad News... 😞
 
 After building the entire system and deploying it to production, I submitted the geocache for review on Geocaching.com. The reviewers rejected it.
 
@@ -293,6 +398,11 @@ The issue wasn't technical. The game worked perfectly. The problem was that Geoc
 I'm hoping Geocaching.com will eventually update their guidelines. Tech opens up entirely new types of challenges: sound recognition, image classification, gesture detection, all running client-side on a phone. For now, though, the geocache remains a technical demo rather than a live treasure hunt.
 
 If you're considering building something similar, I'd recommend reaching out to your local reviewer first to discuss feasibility. The tech works great. It's the policy that needs catching up.
+
+todo: title
+todo: description
+todo: draft -> false
+todo: add some explanations for sample rate being used. Also why we need buffered-audio-processor and not the outdated createScriptProcessor being used in the official mediapipe example
 
 ## Resources
 
