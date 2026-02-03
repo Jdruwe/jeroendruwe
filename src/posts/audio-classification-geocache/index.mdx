@@ -303,9 +303,9 @@ For my use case, I needed an audio classification solution that could run entire
   </div>
 </div>
 
-## Putting It All Together
+## Putting It All Together ✨
 
-Below a live demo of the audio classification in action. Try making different sounds into your microphone and see how the model classifies them in real-time!
+Below a live demo of the audio classification in action. Use your microphone to produce sounds and see how the model classifies them in real-time!
 
 <NoProse>
   <AudioClassification client:load />
@@ -385,9 +385,34 @@ const handleProcessorMessage = (event: MessageEvent) => {
 };
 ```
 
-In the demo I am not actually recording audio. But you could easily add a MediaRecorder passing the destination stream from the AudioContext.
+<div class="text-muted-foreground text-sm">
+  Note: for simplicity this demo omits recording. You can record by creating a
+  MediaRecorder from the AudioContext's destination stream.
+</div>
 
-In my geocache I even added a score multiplier and the option to enable easy-mode as it proved really hard for a human to convincingly imitate a chicken. These 2 settings helped balance the difficulty and made the game more enjoyable.
+### 16kHz Sample Rate
+
+**Sample rate** specifies the number of audio samples recorded per second, measured in Hertz (Hz). Common sample rates include:
+
+- 8kHz - telecom
+- 16kHz - voice/streaming
+- 44.1kHz - CD quality/music
+- 48kHz - video/multimedia standard
+
+When you pass `{ sampleRate: 16000 }` to the [AudioContext constructor](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/AudioContext), the browser automatically converts all incoming audio to that rate. If the microphone records audio at 44.1kHz or 48kHz, the browser downsamples it to 16kHz by discarding sound detail that can’t be represented at the lower rate. This prevents distortion during the conversion and ensures the audio keeps the same pitch and timing, while reducing the data to exactly 16,000 samples per second.
+
+### BufferedAudioProcessor
+
+According to the [Web Audio API specification](https://webaudio.github.io/web-audio-api/#render-quantum-size), the browser processes audio in fixed-size blocks called **render quanta**, defined as 128 frames. This means that regardless of your sample rate, audio nodes receive exactly 128 samples at a time.
+
+YAMNet [expects](https://www.tensorflow.org/hub/tutorials/yamnet#downloading_and_preparing_the_sound_file) 16,000 samples (1 second of audio at 16kHz) for each classification. The mismatch:
+
+- **Sample rate:** 16kHz
+- **Render quantum:** 128 frames per processing block every ~8ms (128 ÷ 16,000 = 0.008 seconds)
+- **YAMNet requires:** 16,000 samples at once
+- **The gap:** You need to collect 125 render quanta (16,000 ÷ 128 = 125) to accumulate 1 second of audio
+
+The `BufferedAudioProcessor` bridges this gap by accumulating those 128-sample chunks across multiple render quanta until it has collected a full second of data (16,000 samples), then transfers that complete buffer to the main thread for classification using [transferable objects](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects) for efficiency.
 
 ## Sad News... 😞
 
@@ -402,13 +427,13 @@ If you're considering building something similar, I'd recommend reaching out to 
 todo: title
 todo: description
 todo: draft -> false
-todo: add some explanations for sample rate being used. Also why we need buffered-audio-processor and not the outdated createScriptProcessor being used in the official mediapipe example
+todo: check if all source links are correct
 
 ## Resources
 
 - [toktoktok.pages.dev](https://toktoktok.pages.dev/) - The live geocache website
+- [Source code](https://github.com/Jdruwe/geo-cluck) - Check out the full implementation on GitHub
 - [MediaPipe Audio Classifier demo](https://mediapipe-studio.webapps.google.com/studio/demo/audio_classifier) - Test audio classification in your browser
 - [MediaPipe Audio Classifier documentation](https://ai.google.dev/edge/mediapipe/solutions/audio/audio_classifier) - Integration guide and API reference
 - [Yamnet on TensorFlow Hub](https://tfhub.dev/google/yamnet/1) - Model details and research paper
-- [Web Audio API: AudioWorklet](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet) - MDN documentation for audio worklets
 - [Geocaching.com](https://www.geocaching.com/) - Learn more about geocaching and find caches near you
