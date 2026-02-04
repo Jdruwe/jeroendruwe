@@ -19,7 +19,7 @@ import babyLaughing from './assets/baby-laughing.mp3';
 import { NoProse } from '../../components/ui/no-prose.tsx';
 import { AudioRecorder } from '../../post-helpers/audio-classification-geocache/audio-recorder';
 import { StereoPanner } from '../../post-helpers/audio-classification-geocache/stereo-panner';
-import { WhiteNoiseInjector } from '../../post-helpers/audio-classification-geocache/white-noise-processor';
+import { WhiteNoiseInjector } from '../../post-helpers/audio-classification-geocache/white-noise-injector';
 import { AudioClassification } from '../../post-helpers/audio-classification-geocache/audio-classification';
 
 I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
@@ -427,7 +427,7 @@ If you're considering building something similar, I'd recommend reaching out to 
 todo: title
 todo: description
 todo: draft -> false
-todo: check if all source links are correct
+todo: intro text is a bit odd
 
 ## Resources
 

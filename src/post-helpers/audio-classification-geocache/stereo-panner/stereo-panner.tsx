@@ -7,9 +7,9 @@ import {
 import { Button } from '@/components/ui/button.tsx';
 import { SpaceContent } from '@/components/ui/space/content/space-content.tsx';
 import { MicIcon, SquareIcon } from 'lucide-react';
-import { useStereoPanner } from '@/post-helpers/audio-classification-geocache/stereo-panner/use-stereo-panner.ts';
 import { Slider } from '@/components/ui/slider.tsx';
 import { Label } from '@/components/ui/label.tsx';
+import { useStereoPanner } from './use-stereo-panner';
 
 const StereoPanner = () => {
   const { pan, setPan, isPanning, startRecording, stopRecording, error } =

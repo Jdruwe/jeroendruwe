@@ -6,12 +6,9 @@ import {
 } from '@/components/ui/space';
 import { Button } from '@/components/ui/button.tsx';
 import { SpaceContent } from '@/components/ui/space/content/space-content.tsx';
-import { useWhiteNoiseInjector } from '@/post-helpers/audio-classification-geocache/white-noise-processor/use-white-noise-injector.ts';
 import { MicIcon, SquareIcon } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
-
-// todo: Ik ben niet echt een fan van die namen binnen deze folder, is er een beter manier?
-// todo: cn om conditioneel classnames toe te voegen OF beter nog, tailwind-variants gebruiken?
+import { useWhiteNoiseInjector } from './use-white-noise-injector';
 
 const WhiteNoiseInjector = () => {
   const { isRecording, startRecording, stopRecording, audioUrl, error } =
@@ -25,7 +22,7 @@ const WhiteNoiseInjector = () => {
           variant="ghost"
           render={
             <a
-              href="https://github.com/Jdruwe/jeroendruwe/blob/master/src/post-helpers/audio-classification-geocache/audio-recorder.tsx"
+              href="https://github.com/Jdruwe/jeroendruwe/blob/master/src/post-helpers/audio-classification-geocache/white-noise-injector/white-noise-injector.tsx"
               target="_blank"
             >
               Source

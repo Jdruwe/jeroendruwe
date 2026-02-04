@@ -54,7 +54,7 @@ const AudioRecorder = () => {
           variant="ghost"
           render={
             <a
-              href="https://github.com/Jdruwe/jeroendruwe/blob/master/src/post-helpers/audio-classification-geocache/audio-recorder.tsx"
+              href="https://github.com/Jdruwe/jeroendruwe/blob/master/src/post-helpers/audio-classification-geocache/audio-recorder/audio-recorder.tsx"
               target="_blank"
             >
               Source

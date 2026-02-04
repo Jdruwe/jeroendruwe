@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button.tsx';
 import { SpaceContent } from '@/components/ui/space/content/space-content.tsx';
 import { MicIcon, SquareIcon } from 'lucide-react';
-import { useAudioClassification } from '@/post-helpers/audio-classification-geocache/audio-classification/use-audio-classification.ts';
+import { useAudioClassification } from './use-audio-classification';
 
 const AudioClassification = () => {
   const { status, startClassification, stopClassification, categories } =
