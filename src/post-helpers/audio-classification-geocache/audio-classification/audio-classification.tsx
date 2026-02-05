@@ -60,7 +60,7 @@ const AudioClassification = () => {
             className="w-full"
             disabled={status === 'starting'}
           >
-            <MicIcon /> Start classification
+            <MicIcon /> Start classification: {status}
           </Button>
         )}
         {(status === 'running' || status === 'stopping') && (

@@ -66,12 +66,6 @@ export const useAudioClassification = () => {
     }
   };
 
-  const reset = async () => {
-    await cleanupResources();
-    setStatus('idle');
-    setCategories([]);
-  };
-
   useEffect(() => {
     isMountedRef.current = true;
 
@@ -110,8 +104,7 @@ export const useAudioClassification = () => {
   const startClassification = async () => {
     try {
       setStatus('starting');
-
-      await reset();
+      setCategories([]);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
