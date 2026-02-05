@@ -1,9 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 
+type Status =
+  | 'idle'
+  | 'starting'
+  | 'running'
+  | 'finished'
+  | 'stopping'
+  | 'error';
+
 export const useAudioRecorder = () => {
-  const [isRecording, setIsRecording] = useState(false);
+  const [status, setStatus] = useState<Status>('idle');
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const isMountedRef = useRef(false);
   const mediaStreamRef = useRef<MediaStream | null>(null);
@@ -37,7 +44,6 @@ export const useAudioRecorder = () => {
 
   const reset = () => {
     cleanupResources();
-    setError(null);
     setAudioUrl(null);
     audioChunksRef.current = [];
   };
@@ -68,8 +74,8 @@ export const useAudioRecorder = () => {
       const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
       const url = URL.createObjectURL(blob);
       setAudioUrl(url);
-      stopStreamTracks(stream);
-      mediaStreamRef.current = null;
+      void cleanupResources();
+      setStatus('finished');
     };
 
     return recorder;
@@ -77,6 +83,7 @@ export const useAudioRecorder = () => {
 
   const startRecording = async () => {
     try {
+      setStatus('starting');
       reset();
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -92,17 +99,16 @@ export const useAudioRecorder = () => {
       mediaRecorderRef.current = recorder;
 
       recorder.start();
-      setIsRecording(true);
+      setStatus('running');
     } catch (err) {
-      setError('Failed to start recording. Please try again.');
-      setIsRecording(false);
+      setStatus('error');
     }
   };
 
   const stopRecording = () => {
+    setStatus('stopping');
     stopMediaRecorder();
-    setIsRecording(false);
   };
 
-  return { isRecording, audioUrl, error, startRecording, stopRecording };
+  return { status, audioUrl, startRecording, stopRecording };
 };

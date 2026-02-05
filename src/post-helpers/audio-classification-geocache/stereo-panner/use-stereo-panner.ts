@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 
+type Status = 'idle' | 'starting' | 'running' | 'stopping' | 'error';
+
 export const useStereoPanner = () => {
+  const [status, setStatus] = useState<Status>('idle');
   const [pan, setPan] = useState<number>(0);
-  const [isPanning, setIsPanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const isMountedRef = useRef(false);
   const audioContextRef = useRef<AudioContext>(null);
@@ -48,10 +49,10 @@ export const useStereoPanner = () => {
     };
   }, []);
 
-  const startRecording = async () => {
+  const startPanning = async () => {
     try {
+      setStatus('starting');
       await cleanupResources();
-      setError(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -72,17 +73,17 @@ export const useStereoPanner = () => {
       audioSourceNodeRef.current.connect(stereoPannerNodeRef.current);
       stereoPannerNodeRef.current.connect(audioContextRef.current.destination);
 
-      setIsPanning(true);
+      setStatus('running');
     } catch (err) {
-      setError('Failed to start recording. Please try again.');
-      setIsPanning(false);
+      setStatus('error');
     }
   };
 
-  const stopRecording = () => {
-    setIsPanning(false);
+  const stopPanning = async () => {
+    setStatus('stopping');
     setPan(0);
-    void cleanupResources();
+    await cleanupResources();
+    setStatus('idle');
   };
 
   useEffect(() => {
@@ -95,5 +96,5 @@ export const useStereoPanner = () => {
     }
   }, [pan]);
 
-  return { isPanning, pan, setPan, error, startRecording, stopRecording };
+  return { status, pan, setPan, startPanning, stopPanning };
 };

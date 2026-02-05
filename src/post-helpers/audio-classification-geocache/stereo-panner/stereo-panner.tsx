@@ -12,8 +12,7 @@ import { Label } from '@/components/ui/label.tsx';
 import { useStereoPanner } from './use-stereo-panner';
 
 const StereoPanner = () => {
-  const { pan, setPan, isPanning, startRecording, stopRecording, error } =
-    useStereoPanner();
+  const { status, pan, setPan, startPanning, stopPanning } = useStereoPanner();
 
   const handleValueChange = (value: number | readonly number[]) => {
     if (typeof value !== 'number') return;
@@ -38,8 +37,10 @@ const StereoPanner = () => {
         />
       </SpaceHeader>
       <SpaceContent>
-        {!!error && <p className="mx-auto w-fit text-red-500">{error}</p>}
-        {isPanning && (
+        {status === 'error' && (
+          <p className="mx-auto w-fit text-red-500">Something went wrong</p>
+        )}
+        {(status === 'running' || status === 'stopping') && (
           <div className="flex flex-col gap-3">
             <p className="text-muted-foreground">
               For the full panning effect, listen with both left and right
@@ -61,24 +62,30 @@ const StereoPanner = () => {
             />
           </div>
         )}
-        {!isPanning && (
+        {(status === 'idle' || status === 'starting') && (
           <p className="text-muted-foreground mx-auto w-fit">
-            Click "Start recording" below to check out audio panning.
+            No panning active
           </p>
         )}
       </SpaceContent>
       <SpaceFooter>
-        {isPanning ? (
+        {(status === 'running' || status === 'stopping') && (
           <Button
-            onClick={stopRecording}
+            onClick={stopPanning}
             variant="destructive"
             className="w-full"
+            disabled={status === 'stopping'}
           >
-            <SquareIcon /> Stop recording
+            <SquareIcon /> Stop panning
           </Button>
-        ) : (
-          <Button onClick={startRecording} className="w-full">
-            <MicIcon /> Start recording
+        )}
+        {(status === 'idle' || status === 'starting') && (
+          <Button
+            onClick={startPanning}
+            className="w-full"
+            disabled={status === 'starting'}
+          >
+            <MicIcon /> Start panning
           </Button>
         )}
       </SpaceFooter>

@@ -9,41 +9,8 @@ import { Button } from '@/components/ui/button.tsx';
 import { MicIcon, SquareIcon } from 'lucide-react';
 import { useAudioRecorder } from './use-audio-recorder';
 
-const RecordingError = ({ message }: { message: string }) => (
-  <p className="text-red-500">{message}</p>
-);
-
-const RecordingInProgress = () => (
-  <p className="animate-pulse font-medium text-red-500">
-    Recording in progress...
-  </p>
-);
-
-const RecordingPlayer = ({ audioUrl }: { audioUrl: string }) => (
-  <audio src={audioUrl} controls className="w-full" />
-);
-
-const RecordingUnavailable = () => (
-  <p className="text-muted-foreground">No recording available.</p>
-);
-
-const RecorderDisplay = ({
-  isRecording,
-  audioUrl,
-  error,
-}: {
-  isRecording: boolean;
-  audioUrl: string | null;
-  error: string | null;
-}) => {
-  if (error) return <RecordingError message={error} />;
-  if (isRecording) return <RecordingInProgress />;
-  if (audioUrl) return <RecordingPlayer audioUrl={audioUrl} />;
-  return <RecordingUnavailable />;
-};
-
 const AudioRecorder = () => {
-  const { isRecording, startRecording, stopRecording, audioUrl, error } =
+  const { status, audioUrl, startRecording, stopRecording } =
     useAudioRecorder();
 
   return (
@@ -64,24 +31,41 @@ const AudioRecorder = () => {
       </SpaceHeader>
       <SpaceContent>
         <div className="grid place-items-center">
-          <RecorderDisplay
-            isRecording={isRecording}
-            audioUrl={audioUrl}
-            error={error}
-          />
+          {(status === 'idle' || status === 'starting') && (
+            <p>No recording active</p>
+          )}
+          {status === 'error' && (
+            <p className="text-red-500">Something went wrong</p>
+          )}
+          {status === 'running' && (
+            <p className="animate-pulse font-medium text-red-500">
+              Recording in progress...
+            </p>
+          )}
+          {status === 'finished' && !!audioUrl && (
+            <audio src={audioUrl} controls className="w-full" />
+          )}
         </div>
       </SpaceContent>
       <SpaceFooter>
-        {isRecording ? (
+        {(status === 'running' || status === 'stopping') && (
           <Button
             onClick={stopRecording}
             variant="destructive"
             className="w-full"
+            disabled={status === 'stopping'}
           >
             <SquareIcon /> Stop recording
           </Button>
-        ) : (
-          <Button onClick={startRecording} className="w-full">
+        )}
+        {(status === 'idle' ||
+          status === 'starting' ||
+          status === 'finished') && (
+          <Button
+            onClick={startRecording}
+            className="w-full"
+            disabled={status === 'starting'}
+          >
             <MicIcon /> Start recording
           </Button>
         )}
