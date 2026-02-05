@@ -1,9 +1,9 @@
 ---
-title: 'The Geocache That Listens: Building an Audio Classification Puzzle'
-pubDate: 2026-02-02T17:00:00Z
-description: 'I built a geocache that uses real-time audio classification to verify chicken sound imitations. Cachers scan a QR code, cluck into their phone, and get an unlock code if the browser thinks they sound convincing enough.'
+title: 'Cluck to Unlock: Building an Audio Classification Geocache'
+pubDate: 2026-02-05T17:00:00Z
+description: 'What happens when you combine geocaching with on-device machine learning? You get a puzzle cache that validates a cacher’s chicken imitation in real-time. The setup uses the Web Audio API to handle audio, while Google’s MediaPipe library employs the YAMNet model to classify sounds, revealing the code only to those who sound like the real deal.'
 tags: []
-draft: true
+draft: false
 ---
 
 import { Image } from 'astro:assets';
@@ -22,9 +22,9 @@ import { StereoPanner } from '../../post-helpers/audio-classification-geocache/s
 import { WhiteNoiseInjector } from '../../post-helpers/audio-classification-geocache/white-noise-injector';
 import { AudioClassification } from '../../post-helpers/audio-classification-geocache/audio-classification';
 
-I built a geocache that asks people to imitate a chicken. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and make chicken sounds into their phone. The browser uses Google's MediaPipe to classify the audio in real-time. If the attempt is convincing enough, they get the combination to unlock the container.
+I built a geocache that uses audio classification to verify chicken imitations. Cachers scan a QR code, get redirected to [toktoktok.pages.dev](https://toktoktok.pages.dev/), and cluck into their phone. If the browser thinks they sound convincing enough, they get the combination to unlock the container.
 
-This post covers how I built it, from capturing audio with the Web Audio API to running machine learning models in the browser.
+This post covers how I built it, from capturing audio with the Web Audio API to running machine learning models in the browser using Google's MediaPipe.
 
 <div class="mx-auto max-w-lg">
   <Image
@@ -414,25 +414,19 @@ YAMNet [expects](https://www.tensorflow.org/hub/tutorials/yamnet#downloading_and
 
 The `BufferedAudioProcessor` bridges this gap by accumulating those 128-sample chunks across multiple render quanta until it has collected a full second of data (16,000 samples), then transfers that complete buffer to the main thread for classification using [transferable objects](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects) for efficiency.
 
-## Sad News... 😞
+## Sad News 😞
 
-After building the entire system and deploying it to production, I submitted the geocache for review on Geocaching.com. The reviewers rejected it.
+With all the pieces in place, the system behaved exactly as intended. However, I ran into an unexpected hurdle when the cache was rejected during review. The concept appears to be ahead of its time, and the current guidelines do not yet take this kind of cache into account. The reviewers were unsure how to evaluate it, and even after reaching out to HQ in the U.S., I received the same response.
 
-The issue wasn't technical. The game worked perfectly. The problem was that Geocaching.com's current guidelines don't account for machine learning based caches.
-
-I'm hoping Geocaching.com will eventually update their guidelines. Tech opens up entirely new types of challenges: sound recognition, image classification, gesture detection, all running client-side on a phone. For now, though, the geocache remains a technical demo rather than a live treasure hunt.
-
-If you're considering building something similar, I'd recommend reaching out to your local reviewer first to discuss feasibility. The tech works great. It's the policy that needs catching up.
+I hope Geocaching.com will eventually embrace these new possibilities. On-device technologies like real-time sound recognition and gesture detection create entirely new ways to interact with geocaches. For now, this project remains a technical demonstration rather than a live treasure hunt.
 
 todo: title
+todo: post name
 todo: description
-todo: draft -> false
-todo: intro text is a bit odd
-todo: conclusion?
 
 ## Resources
 
-- [toktoktok.pages.dev](https://toktoktok.pages.dev/) - The live geocache website
+- [toktoktok.pages.dev](https://toktoktok.pages.dev/) - The live geocache website 🎤🐔
 - [Source code](https://github.com/Jdruwe/geo-cluck) - Check out the full implementation on GitHub
 - [MediaPipe Audio Classifier demo](https://mediapipe-studio.webapps.google.com/studio/demo/audio_classifier) - Test audio classification in your browser
 - [MediaPipe Audio Classifier documentation](https://ai.google.dev/edge/mediapipe/solutions/audio/audio_classifier) - Integration guide and API reference
