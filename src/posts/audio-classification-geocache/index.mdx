@@ -272,34 +272,30 @@ For my use case, I needed an audio classification solution that could run entire
 - **Supported SDKs:** MediaPipe provides native libraries across several environments: **Web:** JavaScript / TypeScript (see this [official CodePen example](https://codepen.io/mediapipe-preview/pen/wvxYYmy)), **Android:** Java / Kotlin & **Python**.
 
 <div class="not-prose mx-auto flex max-w-lg flex-col gap-5">
-  <div class="flex flex-col gap-2">
+  <div class="text-muted-foreground flex flex-col gap-2 text-xs">
     <Image
       class="rounded-xs border-4"
       src={yamnetClasses}
       alt="Classes supported by the Yamnet deep net"
     />
-    <p class="text-muted-foreground text-xs">
-      Subset of by YamNet recognized classes
-    </p>
+    Subset of by YamNet recognized classes
   </div>
   <div class="flex flex-col gap-2">
     <audio src={babyLaughing} controls class="w-full" />
-    <p class="text-muted-foreground text-xs">
-      Sound Effect by{' '}
-      <a href="https://pixabay.com/users/scottishperson-16626294/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=237186">
-        Scottish Guy
-      </a>
-    </p>
+    <a
+      class="text-muted-foreground text-xs"
+      href="https://pixabay.com/users/scottishperson-16626294/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=237186"
+    >
+      Sound Effect by Scottish Guy
+    </a>
   </div>
-  <div class="flex flex-col gap-2">
+  <div class="text-muted-foreground flex flex-col gap-2 text-xs">
     <Image
       class="rounded-xs border-4"
       src={yamnetClassification}
       alt="Yamnet classifying the sound of a baby laughing, top 3 results are being shown"
     />
-    <p class="text-muted-foreground text-xs">
-      YamNet classifying the sound of a baby laughing
-    </p>
+    YamNet classifying the sound of a baby laughing
   </div>
 </div>
 
@@ -419,10 +415,6 @@ The `BufferedAudioProcessor` bridges this gap by accumulating those 128-sample c
 With all the pieces in place, the system behaved exactly as intended. However, I ran into an unexpected hurdle when the cache was rejected during review. The concept appears to be ahead of its time, and the current guidelines do not yet take this kind of cache into account. The reviewers were unsure how to evaluate it, and even after reaching out to HQ in the U.S., I received the same response.
 
 I hope Geocaching.com will eventually embrace these new possibilities. On-device technologies like real-time sound recognition and gesture detection create entirely new ways to interact with geocaches. For now, this project remains a technical demonstration rather than a live treasure hunt.
-
-todo: title
-todo: post name
-todo: description
 
 ## Resources
 
