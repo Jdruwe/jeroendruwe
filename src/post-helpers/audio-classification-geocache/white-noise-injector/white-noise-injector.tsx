@@ -41,29 +41,20 @@ const WhiteNoiseInjector = () => {
       >
         <div className="grid place-items-center">
           {hasStatus('idle', 'starting') && (
-            <p>No white noise injection active</p>
+            <p>White noise injection inactive</p>
           )}
           {hasStatus('error') && (
             <p className="text-red-500">White noise injection failed</p>
           )}
           {hasStatus('running') && (
             <p className="animate-pulse font-medium text-red-500">
-              White noise injection in progress...
+              White noise injection active...
             </p>
           )}
+          {hasStatus('finished') && !!audioUrl && (
+            <audio src={audioUrl} controls className="w-full" />
+          )}
         </div>
-        {/*{!isRecording && !audioUrl && (*/}
-        {/*  <p className="text-muted-foreground mx-auto w-fit">*/}
-        {/*    Click "Start recording" below to check out the noise injector.*/}
-        {/*  </p>*/}
-        {/*)}*/}
-        {/*{isRecording && (*/}
-        {/*  <p className="mx-auto w-fit animate-pulse font-medium text-red-500">*/}
-        {/*    Recording in progress...*/}
-        {/*  </p>*/}
-        {/*)}*/}
-        {/*{!!audioUrl && <audio src={audioUrl} controls className="w-full" />}*/}
-        {/*{!!error && <p className="mx-auto w-fit text-red-500">{error}</p>}*/}
       </SpaceContent>
       <SpaceFooter>
         {hasStatus('idle', 'starting', 'error', 'finished') && (
