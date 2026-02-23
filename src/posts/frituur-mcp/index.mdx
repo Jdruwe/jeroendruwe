@@ -1,0 +1,99 @@
+---
+title: 'Automated Slot Checking with the Frituur MCP'
+pubDate: 2026-02-23T21:18:00Z
+description: 'TODO'
+tags: []
+draft: true
+---
+
+import { Image } from 'astro:assets';
+
+import mcpStatus from './assets/mcp-status.jpg';
+import actualTimePrompt from './assets/actual-time-prompt.jpg';
+import timeProvidedPrompt from './assets/time-provided-prompt.jpg';
+
+Friday evening is approaching, still working hard / hardly working and you are craving some delicious fries from your local frituur.
+Nothing worse than leaving your terminal and getting out of the zone, no fear, Frituur MCP is here!
+
+## Interacting With The MCP Through OpenCode
+
+Listing the connected MCP servers
+
+<Image
+  class="mx-auto rounded-xs border-4 md:max-w-lg"
+  src={mcpStatus}
+  alt="Connection status of configured MCP servers"
+/>
+
+Checking for free slots. As I did not provide any time information,`gpt-5.2` will pass the actual time as it's a required parameter for the `order_time_slots` tool.
+
+<Image
+  class="rounded-xs border-4"
+  src={actualTimePrompt}
+  alt="order_time_slots tool called with the actual time provided"
+/>
+
+In case I provide time information, `gpt-5.2` will use that instead of the actual time to check for available slots.
+
+<Image
+  class="rounded-xs border-4"
+  src={timeProvidedPrompt}
+  alt="order_time_slots tool called with a custom time provided"
+/>
+
+## Time For Some Code
+
+**NOTE**: I am by no means a Playwright expert, I probably did not follow all best practices, but it works and that's what matters for this project 😊
+
+```ts
+this.server.registerTool("order_time_slots", {
+		description: "List today's available ordering slots for the frituur",
+		inputSchema: {
+			time: z.iso
+				.time()
+				.describe("Current time in 24-hour format, e.g., HH:MM -> 14:30"),
+		},
+	},
+
+...
+
+const [currentHour, currentMin] = time.split(':').map(Number);
+const cutoffMinutes = currentHour * 60 + currentMin;
+
+const slots = await page.locator('[data-testid^="slot-option-"]').evaluateAll((elements, cutoff) =>
+		elements
+			.map(el => ({
+				time: el.getAttribute('data-testid').replace('slot-option-', ''),
+				remaining: el.querySelector('p').getAttribute('data-value')
+			}))
+			.filter(slot => {
+				const [slotHour, slotMin] = slot.time.split(':').map(Number);
+				return (slotHour * 60 + slotMin) >= cutoff;
+			})
+	, cutoffMinutes);
+
+...
+
+const formattedSlots = slots.map((slot) =>
+	[
+		`Time: ${slot.time}`,
+		`Remaining: ${slot.remaining}`,
+		"---",
+	].join("\n"),
+);
+
+return {
+	content: [
+		{
+			type: "text",
+			text: `Available order time slots for today (>= ${time}):\n\n${formattedSlots.join("\n")}`,
+		},
+	],
+};
+```
+
+## Resources
+
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [Source code](https://github.com/Jdruwe/frituur-mcp)
+- [Cloudflare - Build a Remote MCP server](https://developers.cloudflare.com/agents/guides/remote-mcp-server/)
