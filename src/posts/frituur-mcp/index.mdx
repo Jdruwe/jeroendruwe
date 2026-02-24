@@ -1,19 +1,29 @@
 ---
-title: 'Automated Slot Checking with the Frituur MCP'
+title: 'Automating Frituur Order Slot Checking with an MCP Server'
 pubDate: 2026-02-23T21:18:00Z
-description: 'TODO'
+description: 'Never miss a frituur order slot again. A practical guide to building an MCP server that checks real-time availability using Playwright.'
 tags: []
-draft: true
+draft: false
 ---
 
 import { Image } from 'astro:assets';
 
+import orderTimeSlots from './assets/order-time-slots.jpg';
 import mcpStatus from './assets/mcp-status.jpg';
 import actualTimePrompt from './assets/actual-time-prompt.jpg';
 import timeProvidedPrompt from './assets/time-provided-prompt.jpg';
 
 Friday evening is approaching, still working hard / hardly working and you are craving some delicious fries from your local frituur.
-Nothing worse than leaving your terminal and getting out of the zone, no fear, Frituur MCP is here!
+Nothing worse than leaving your terminal and getting out of the zone, no fear, Frituur MCP (Model Context Protocol) is here!
+
+I’ll show how I built a small MCP server that scrapes real-time order slot availability from a frituur website using Playwright.
+It’s a practical example of how LLMs can interact with external systems through structured tools.
+
+<Image
+  class="rounded-xs border-4"
+  src={orderTimeSlots}
+  alt="order_time_slots tool called with the actual time provided"
+/>
 
 ## Interacting With The MCP Through OpenCode
 
@@ -22,7 +32,7 @@ Listing the connected MCP servers
 <Image
   class="mx-auto rounded-xs border-4 md:max-w-lg"
   src={mcpStatus}
-  alt="Connection status of configured MCP servers"
+  alt="Order time slots being shown on the actual website of the Frituur"
 />
 
 Checking for free slots. As I did not provide any time information,`gpt-5.2` will pass the actual time as it's a required parameter for the `order_time_slots` tool.
