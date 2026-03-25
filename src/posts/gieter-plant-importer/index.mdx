@@ -1,0 +1,210 @@
+---
+title: 'Building Gieter: Part 1 - Plant Importer'
+pubDate: 2026-03-26T21:18:00Z
+description: "How I'm building a personal garden maintenance app using Cloudflare Workflows to automate plant care planning with AI."
+tags: []
+draft: true
+---
+
+import { Image } from 'astro:assets';
+
+import gieterLogo from './assets/gieter-logo.png';
+
+I have a garden with various plants, each with different care requirements. Some need pruning in February, others need fertilizer in March, and a few require specific watering schedules. I'm not a gardening expert, so I often find myself googling "when to prune hydrangeas" or "magnolia care calendar Belgium", only to forget the information a week later.
+
+<div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+  <Image class="w-30 shrink-0" src={gieterLogo} alt="Project logo" />
+  This is what **[Gieter](https://github.com/Jdruwe/gieter)** aims to solve,
+  automatically building a custom schedule tailored to Belgium’s... unique
+  weather and notifying me when action needs to be taken. This is the first post
+  in a series where I’ll walk you through how I'm building this personal garden
+  maintenance app.
+</div>
+
+## The Cloudflare Stack
+
+I'm building Gieter entirely on Cloudflare's platform. For a personal side project, their free tier is [unmatched](https://developers.cloudflare.com/workers/platform/pricing/).
+
+The plant importer is just the first piece. As Gieter grows, I'll use:
+
+- **D1** for storing plants, tasks, and user data
+- **R2** for plant images
+- **Workers** for the frontend
+- **Workers AI** for potential future features like plant identification from photos
+
+### Workflows
+
+> With Workflows, you can build applications that chain together multiple steps, automatically retry failed tasks, and persist state for minutes, hours, or even weeks - with no infrastructure to manage.
+
+<div className="text-muted-foreground text-xs">
+  -- https://developers.cloudflare.com/workflows/
+</div>
+
+The plant importer does three things:
+
+1. **Search** - Find relevant care information for the plant
+2. **Extract** - Scrape content from the search results
+3. **Generate** - Use AI to create a structured maintenance plan
+
+Here's the full workflow class, which I'll break down step by step:
+
+### Step 1: Search with Tavily
+
+I use [Tavily](https://tavily.com/) for web search. Using their [Javascript SDK](https://docs.tavily.com/sdk/javascript/reference) I look for for relevant results. Initially I was planning on scraping the web myself using Playwright and Google but I bumped into Google’s scraping protection fast. Tavily has all of this figured out and you can start for free.
+
+```typescript
+const tavilyClient = tavily({ apiKey: process.env['TAVILY_API_KEY'] });
+
+const searchResponse = await step.do('search', async () => {
+  return await tavilyClient.search(
+    `${event.payload.plant} onderhoudskalender België`,
+    { country: 'Belgium' },
+  );
+});
+```
+
+I search in Dutch since I want Belgium-specific care information:
+
+```
+${plant} onderhoudskalender België
+```
+
+This returns a list of URLs with plant care information. Wrapping the call in `step.do()` ensures the search results are persisted - if a later step fails, this step won't re-run.
+
+### Step 2: Extract Content
+
+```typescript
+const extractResponse = await step.do('extract content', async () => {
+  return await tavilyClient.extract(searchResponse.results.map((r) => r.url));
+});
+```
+
+Tavily's extract API scrapes the raw content from the URLs found in step 1. This gives me the actual text from gardening websites, forums, and care guides - the source material the AI will use to generate the maintenance plan.
+
+### Step 3: Generate Structured Output
+
+```typescript
+return await step.do('generate plan', async () => {
+  const { output } = await generateText({
+    model: openai('gpt-5-mini-2025-08-07'),
+    output: Output.object({
+      schema: z.object({
+        name: z.string().describe('Name of the plant'),
+        type: z.string().describe('Type of plant, e.g. flowers, tree, etc.'),
+        sources: z.array(z.string()).describe('List of relevant links used'),
+        tasks: z.array(
+          z.object({
+            description: z
+              .string()
+              .describe('Description of the maintenance task'),
+            deadline: z.object({
+              month: z.number().describe('Numeric month, e.g. 1 for January'),
+              day: z.number().describe('Numeric day of the month'),
+            }),
+            products: z
+              .array(z.string())
+              .describe('Products needed, e.g. fertilizers, tools'),
+          }),
+        ),
+      }),
+    }),
+    // ... prompt configuration
+  });
+
+  return output;
+});
+```
+
+This is where the magic happens. I use the Vercel AI SDK with OpenAI to generate a structured maintenance plan. The key is using Zod schemas to ensure the output is exactly what I need - plant name, type, sources used, and a list of tasks with descriptions, deadlines, and required products.
+
+The AI is instructed to:
+
+- Only use the extracted content (no hallucinating care advice)
+- Output in Dutch
+- Provide exact dates (no "in late autumn")
+- Sort tasks by date
+
+## Triggering the Workflow
+
+The workflow is exposed through a simple fetch handler:
+
+```typescript
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Check status of existing workflow
+    const instanceId = url.searchParams.get('instanceId');
+    if (instanceId) {
+      const instance = await env.IMPORT_PLANT_WORKFLOW.get(instanceId);
+      return Response.json(await instance.status());
+    }
+
+    // Start new workflow
+    const plant = url.searchParams.get('plant');
+    if (!plant) {
+      return new Response("Missing 'plant' parameter", { status: 400 });
+    }
+
+    const instance = await env.IMPORT_PLANT_WORKFLOW.create({
+      params: { plant },
+    });
+
+    return Response.json({ instanceId: instance.id });
+  },
+} satisfies ExportedHandler<Env>;
+```
+
+To start an import:
+
+```bash
+curl "http://localhost:8787/?plant=Hortensia"
+# Response: { "instanceId": "73279953-cbef-4bec-85bd-97690fc6940f" }
+```
+
+To check progress:
+
+```bash
+curl "http://localhost:8787/?instanceId=73279953-cbef-4bec-85bd-97690fc6940f"
+```
+
+## Current Status
+
+The plant importer is functional and successfully generates maintenance plans. Here's a sample output for "Hortensia" (Hydrangea):
+
+```json
+{
+  "name": "Hortensia",
+  "type": "struik",
+  "sources": [
+    "https://www.tuinadvies.be/plant/hortensia",
+    "https://www.velt.nu/plantengids/hortensia"
+  ],
+  "tasks": [
+    {
+      "description": "Dode bloemen verwijderen",
+      "deadline": { "month": 2, "day": 15 },
+      "products": ["snoeischaar"]
+    },
+    {
+      "description": "Bemesten met rhododendronmeststof",
+      "deadline": { "month": 3, "day": 1 },
+      "products": ["rhododendronmeststof"]
+    }
+  ]
+}
+```
+
+## What's Next
+
+In the next post, I'll cover:
+
+- Building the web interface for viewing and managing plants
+- Setting up the database with Cloudflare D1
+- Implementing the task notification system
+
+Gieter is still early in development. The goal is to have a working PWA that I can use for the upcoming gardening season. Follow along for more updates!
+
+---
+
+_This is part 1 of the Building Gieter series. The code is available in the [Gieter repository](https://github.com/jeroendruwe/gieter)._

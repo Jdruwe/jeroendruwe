@@ -10,7 +10,7 @@ const getAllPosts = async (): Promise<Post[]> => {
     .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 };
 
-const getRecentPosts = async (count = 3): Promise<Post[]> => {
+const getRecentPosts = async (count = 10): Promise<Post[]> => {
   const posts = await getAllPosts();
   return posts.slice(0, count);
 };
