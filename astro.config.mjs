@@ -14,6 +14,8 @@ import expressiveCode from 'astro-expressive-code';
 
 import sitemap from '@astrojs/sitemap';
 
+import d2 from 'astro-d2';
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://www.jeroendruwe.be',
@@ -37,6 +39,11 @@ export default defineConfig({
     }),
     mdx(),
     sitemap(),
+    d2({
+      experimental: {
+        useD2js: true,
+      },
+    }),
   ],
   markdown: {
     remarkPlugins: [remarkReadingTime],

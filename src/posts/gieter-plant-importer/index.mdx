@@ -10,7 +10,7 @@ import { Image } from 'astro:assets';
 
 import gieterLogo from './assets/gieter-logo.png';
 
-I have a garden with various plants, each with different care requirements. Some need pruning in February, others need fertilizer in March, and a few require specific watering schedules. I'm not a gardening expert, so I often find myself googling "when to prune hydrangeas" or "magnolia care calendar Belgium", only to forget the information a week later.
+I have a garden with a variety of plants, each requiring its own type of care. Some need pruning in February, others benefit from fertilizer in March, and a few have specific watering schedules. Since I’m not an expert gardener, I often catch myself searching things like “when to prune hydrangeas” or “magnolia care calendar Belgium,” only to forget the details a week later.
 
 <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
   <Image class="w-30 shrink-0" src={gieterLogo} alt="Project logo" />
@@ -23,7 +23,7 @@ I have a garden with various plants, each with different care requirements. Some
 
 ## The Cloudflare Stack
 
-I'm building Gieter entirely on Cloudflare's platform. For a personal side project, their free tier is [unmatched](https://developers.cloudflare.com/workers/platform/pricing/).
+I'm building Gieter entirely on Cloudflare's platform. For a personal project like mine, their free tier is [unmatched](https://developers.cloudflare.com/workers/platform/pricing/).
 
 The plant importer is just the first piece. As Gieter grows, I'll use:
 
@@ -32,7 +32,7 @@ The plant importer is just the first piece. As Gieter grows, I'll use:
 - **Workers** for the frontend
 - **Workers AI** for potential future features like plant identification from photos
 
-### Workflows
+### ImportPlantWorkflow
 
 > With Workflows, you can build applications that chain together multiple steps, automatically retry failed tasks, and persist state for minutes, hours, or even weeks - with no infrastructure to manage.
 
@@ -40,15 +40,47 @@ The plant importer is just the first piece. As Gieter grows, I'll use:
   -- https://developers.cloudflare.com/workflows/
 </div>
 
-The plant importer does three things:
+```d2 sketch
+Search: {
+  label: |md
+  ### 1. Identify
+  Query web for care data
+  on **User-Specified Plant**
+  |
+  style.font-size: 18
+  shape: rectangle
+}
 
-1. **Search** - Find relevant care information for the plant
-2. **Extract** - Scrape content from the search results
-3. **Generate** - Use AI to create a structured maintenance plan
+Extract: {
+  label: |md
+  ### 2. Parse
+  Scrape search results
+  into **Clean Markdown**
+  |
+  style.font-size: 18
+  shape: rectangle
+}
 
-Here's the full workflow class, which I'll break down step by step:
+Generate: {
+  label: |md
+  ### 3. Generate
+  AI-generate a
+  **Structured Schedule**
+  |
+  style.font-size: 18
+  shape: rectangle
+}
 
-### Step 1: Search with Tavily
+# Connections
+Search -> Extract: List of URLs {
+  style.font-size: 18
+}
+Extract -> Generate: Markdown Content {
+  style.font-size: 18
+}
+```
+
+#### Step 1: Search with Tavily
 
 I use [Tavily](https://tavily.com/) for web search. Using their [Javascript SDK](https://docs.tavily.com/sdk/javascript/reference) I look for for relevant results. Initially I was planning on scraping the web myself using Playwright and Google but I bumped into Google’s scraping protection fast. Tavily has all of this figured out and you can start for free.
 
