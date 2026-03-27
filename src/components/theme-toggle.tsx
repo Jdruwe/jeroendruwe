@@ -1,12 +1,9 @@
 import { Button } from '@/components/ui/button.tsx';
 import { MoonIcon, SunIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import useSound from 'use-sound';
 
 const ThemeToggle = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
-  const [playOn] = useSound('/sounds/switch-on.mp3');
-  const [playOff] = useSound('/sounds/switch-off.mp3');
 
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains('dark');
@@ -24,11 +21,12 @@ const ThemeToggle = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(nextTheme);
 
-    if (nextTheme === 'light') {
-      playOn();
-    } else {
-      playOff();
-    }
+    const sound = new Audio(
+      nextTheme === 'light'
+        ? '/sounds/switch-on.mp3'
+        : '/sounds/switch-off.mp3',
+    );
+    sound.play().catch(() => {});
   };
 
   return (

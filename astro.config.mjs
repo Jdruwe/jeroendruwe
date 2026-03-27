@@ -17,12 +17,11 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://www.jeroendruwe.be',
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    prerenderEnvironment: 'node',
+  }),
   vite: {
     plugins: [tailwindcss()],
-    ssr: {
-      noExternal: ['use-sound'],
-    },
   },
   integrations: [
     react(),
