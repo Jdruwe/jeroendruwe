@@ -34,7 +34,7 @@ The plant importer is just the first piece. As Gieter grows, I'll use:
 
 ### ImportPlantWorkflow
 
-> With Workflows, you can build applications that chain together multiple steps, automatically retry failed tasks, and persist state for minutes, hours, or even weeks - with no infrastructure to manage.
+Cloudflare Workflows provide durable execution for multi-step processes. Each step wrapped in `step.do()` is persisted, so if a later step fails, completed steps don't re-run. This is perfect for the plant importer, where each step (search, extract, generate) can take time and may need retries.
 
 <div className="text-muted-foreground text-xs">
   -- https://developers.cloudflare.com/workflows/
@@ -95,15 +95,17 @@ const searchResponse = await step.do('search', async () => {
 });
 ```
 
-I search in Dutch since I want Belgium-specific care information:
+I search in Dutch to find locally relevant results, with the `country: 'Belgium'` parameter further narrowing to Belgian sources:
 
 ```
 ${plant} onderhoudskalender België
 ```
 
-This returns a list of URLs with plant care information. Wrapping the call in `step.do()` ensures the search results are persisted - if a later step fails, this step won't re-run.
+This returns a list of URLs with plant care information. Wrapping the call in `step.do()` ensures the search results are persisted.
 
-### Step 2: Extract Content
+#### Step 2: Extract Content
+
+Tavily's extract API scrapes the URLs from step 1, returning clean markdown by default. This gives me structured text from gardening websites, forums, and care guides, ideal source material for the AI to generate a maintenance plan.
 
 ```typescript
 const extractResponse = await step.do('extract content', async () => {
@@ -111,9 +113,9 @@ const extractResponse = await step.do('extract content', async () => {
 });
 ```
 
-Tavily's extract API scrapes the raw content from the URLs found in step 1. This gives me the actual text from gardening websites, forums, and care guides - the source material the AI will use to generate the maintenance plan.
+#### Step 3: Generate Structured Output
 
-### Step 3: Generate Structured Output
+This is where the magic happens. I use the Vercel AI SDK with OpenAI to generate a structured maintenance plan. The key is using Zod schemas to ensure the output is exactly what I need. For now I am extracting the plant name, type, sources used, and a list of tasks with descriptions, deadlines, and required products.
 
 ```typescript
 return await step.do('generate plan', async () => {
@@ -140,25 +142,60 @@ return await step.do('generate plan', async () => {
         ),
       }),
     }),
-    // ... prompt configuration
+    // ... prompt configuration, see below for more details
   });
 
   return output;
 });
 ```
 
-This is where the magic happens. I use the Vercel AI SDK with OpenAI to generate a structured maintenance plan. The key is using Zod schemas to ensure the output is exactly what I need - plant name, type, sources used, and a list of tasks with descriptions, deadlines, and required products.
+##### System prompt
 
-The AI is instructed to:
+Implementing a robust system prompt is essential for ensuring the model generates high-quality, consistent maintenance plans. By enforcing a grounded response strategy, I ensure the model treats only the extracted content as its sole source of truth.
 
-- Only use the extracted content (no hallucinating care advice)
-- Output in Dutch
-- Provide exact dates (no "in late autumn")
-- Sort tasks by date
+```typescript
+system: `
+	- Only use the <extraction-results> as a source of truth, do NOT generate something of your own
+	- Generate output in Dutch, even if the input is in another language.
+	- Avoid using vague references like 'in three months' or 'late autumn.' Always calculate and state the exact deadline or scheduled date for a task to ensure maintenance logs remain actionable and unambiguous.
+	- Sort maintenance tasks by date ascending
+	- Providing enough details when pruning info is shared`;
+```
 
-## Triggering the Workflow
+##### Prompt
 
-The workflow is exposed through a simple fetch handler:
+I am using [Anthropic's prompt template](https://www.youtube.com/watch?v=ysPbXH0LpIE) which I encountered when following the AI SDK Crash Course from Matt Pocock.
+
+```typescript
+prompt: `
+<task-context>
+	You are a helpful plant assistant that creates a maintenance plan requested by the user.
+</task-context>
+
+<background-data>
+	<extraction-results>
+		${extractResponse.results
+      .map(
+        (result) => `
+				<result>
+					<title>${result.title}</title>
+					<url>${result.url}</url>
+					<content>${result.rawContent}</content>
+				</result>
+			`,
+      )
+      .join('\n')}
+	</extraction-results>
+</background-data>
+
+<the-ask>
+	The user request a plan to be made for: <plant>${event.payload.plant}</plant>
+</the-ask>`;
+```
+
+#### Triggering the Workflow
+
+For now, the workflow is exposed through a simple fetch handler:
 
 ```typescript
 export default {
@@ -194,40 +231,57 @@ curl "http://localhost:8787/?plant=Hortensia"
 # Response: { "instanceId": "73279953-cbef-4bec-85bd-97690fc6940f" }
 ```
 
-To check progress:
+To check its progress:
 
 ```bash
 curl "http://localhost:8787/?instanceId=73279953-cbef-4bec-85bd-97690fc6940f"
 ```
 
-## Current Status
+#### Output
 
 The plant importer is functional and successfully generates maintenance plans. Here's a sample output for "Hortensia" (Hydrangea):
 
 ```json
 {
   "name": "Hortensia",
-  "type": "struik",
+  "type": "bloeiende heester / struik",
   "sources": [
-    "https://www.tuinadvies.be/plant/hortensia",
-    "https://www.velt.nu/plantengids/hortensia"
+    "https://www.aveve.be/nl/inspiratie/sierplanten-en-struiken/hortensias-planten-en-verzorgen",
+    "https://www.intratuin.be/plantengids/hortensia-hydrangea-verzorging",
+    "https://moowy.be/hortensia-verzorgen-een-complete-gids/",
+    "https://dcm-info.be/nl/hobby/tuintips/hortensias-verzorgen-en-bemesten-zo-laat-je-ze-stralen",
+    "https://www.tuinadvies.be/tuininfo/tuinonderhoud-kalender/snoeien/struik-hortensia-snoeien/"
   ],
   "tasks": [
     {
-      "description": "Dode bloemen verwijderen",
-      "deadline": { "month": 2, "day": 15 },
-      "products": ["snoeischaar"]
+      "description": "Snoei pluimhortensia (Hydrangea paniculata). Verwijder alle takken tot ongeveer 15 cm boven de grond om verjonging en stevige gesteltakken te verzekeren. Snoei vroeg (voor sapstroom begint) zodat de plant op éénjarig hout goed kan uitlopen. (Bron: Aveve / Intratuin / Tuinadvies)",
+      "deadline": {
+        "month": 2,
+        "day": 28
+      },
+      "products": [
+        "scherpe snoeischaar / takkenschaar",
+        "tuinhandschoenen",
+        "desinfecterend middel voor snoeigereedschap (om ziekten te voorkomen)"
+      ]
     },
     {
-      "description": "Bemesten met rhododendronmeststof",
-      "deadline": { "month": 3, "day": 1 },
-      "products": ["rhododendronmeststof"]
+      "description": "Vormsnoei boerenhortensia (Hydrangea macrophylla). In vroege lente: knip enkele van de oudste, dikste takken tot op de grond weg en verwijder maximaal 25% van de takken per jaar (verjongingsprincipe). Laat gezonde jonge scheuten staan. Snoei voorzichtig: deze soort bloeit deels op 2-jarig hout. (Bron: Aveve / Intratuin / Tuinadvies)",
+      "deadline": {
+        "month": 3,
+        "day": 1
+      },
+      "products": [
+        "snoeischaar",
+        "takkenschaar voor dikke stengels",
+        "tuinhandschoenen"
+      ]
     }
   ]
 }
 ```
 
-## What's Next
+## What's Next TODO
 
 In the next post, I'll cover:
 
