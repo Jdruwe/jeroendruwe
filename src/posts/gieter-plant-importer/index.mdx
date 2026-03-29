@@ -1,6 +1,6 @@
 ---
 title: 'Building Gieter: Part 1 - Plant Importer'
-pubDate: 2026-03-26T21:18:00Z
+pubDate: 2026-03-30T9:30:00Z
 description: "How I'm building a personal garden maintenance app using Cloudflare Workflows to automate plant care planning with AI."
 tags: []
 draft: true
@@ -224,14 +224,14 @@ export default {
 } satisfies ExportedHandler<Env>;
 ```
 
-To start an import:
+**Starting an import**
 
 ```bash
 curl "http://localhost:8787/?plant=Hortensia"
 # Response: { "instanceId": "73279953-cbef-4bec-85bd-97690fc6940f" }
 ```
 
-To check its progress:
+**Checking workflow status**
 
 ```bash
 curl "http://localhost:8787/?instanceId=73279953-cbef-4bec-85bd-97690fc6940f"
@@ -281,16 +281,16 @@ The plant importer is functional and successfully generates maintenance plans. H
 }
 ```
 
-## What's Next TODO
+## What's Next
 
-In the next post, I'll cover:
+In future posts, I plan on covering:
 
+- Persisting the data in D1
+- Adding some human in the loop feature for validating and correcting the generated plans
 - Building the web interface for viewing and managing plants
-- Setting up the database with Cloudflare D1
-- Implementing the task notification system
-
-Gieter is still early in development. The goal is to have a working PWA that I can use for the upcoming gardening season. Follow along for more updates!
+- Implementing a task notification system
+- ...
 
 ---
 
-_This is part 1 of the Building Gieter series. The code is available in the [Gieter repository](https://github.com/jeroendruwe/gieter)._
+_This is part 1 of the Building Gieter series. The source code is available on [GitHub](https://github.com/Jdruwe/gieter)._
