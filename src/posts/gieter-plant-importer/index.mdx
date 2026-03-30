@@ -1,9 +1,10 @@
 ---
-title: 'Building Gieter: Part 1 - Plant Importer'
+title: 'Building Gieter: Part 1 — The Plant Importer'
+slug: 'gieter-plant-importer'
 pubDate: 2026-03-30T9:30:00Z
-description: "How I'm building a personal garden maintenance app using Cloudflare Workflows to automate plant care planning with AI."
+description: 'I built a plant importer that pulls care guides from the web and uses AI to generate personalized maintenance schedules.'
 tags: []
-draft: true
+draft: false
 ---
 
 import { Image } from 'astro:assets';
@@ -151,7 +152,7 @@ return await step.do('generate plan', async () => {
 
 ##### System prompt
 
-Implementing a robust system prompt is essential for ensuring the model generates high-quality, consistent maintenance plans. By enforcing a grounded response strategy, I ensure the model treats only the extracted content as its sole source of truth.
+Implementing a robust system prompt is essential for ensuring the model generates high-quality, consistent maintenance plans.
 
 ```typescript
 system: `
@@ -285,10 +286,11 @@ The plant importer is functional and successfully generates maintenance plans. H
 
 In future posts, I plan on covering:
 
-- Persisting the data in D1
-- Adding some human in the loop feature for validating and correcting the generated plans
-- Building the web interface for viewing and managing plants
-- Implementing a task notification system
+- **Persisting** the data in D1
+- Adding some **human in the loop** feature for validating and correcting the generated plans
+- Building the **web interface** for viewing and managing plants
+- Implementing a task **notification system**
+- Taking a photograph of a plant and using AI to identify it and generate a care plan automatically
 - ...
 
 ---
