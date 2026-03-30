@@ -24,3 +24,6 @@ pnpm-debug.log*
 .idea/
 
 .wrangler
+
+# D2 schema's are generated during build
+public/d2/

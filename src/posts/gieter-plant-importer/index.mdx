@@ -10,13 +10,15 @@ draft: false
 import { Image } from 'astro:assets';
 
 import gieterLogo from './assets/gieter-logo.png';
+import RainText from '../../components/RainText.astro';
 
 I have a garden with a variety of plants, each requiring its own type of care. Some need pruning in February, others benefit from fertilizer in March, and a few have specific watering schedules. Since I’m not an expert gardener, I often catch myself searching things like “when to prune hydrangeas” or “magnolia care calendar Belgium,” only to forget the details a week later.
 
 <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
   <Image class="w-30 shrink-0" src={gieterLogo} alt="Project logo" />
   This is what **[Gieter](https://github.com/Jdruwe/gieter)** aims to solve,
-  automatically building a custom schedule tailored to Belgium’s... unique
+  automatically building a custom schedule tailored to Belgium's...{' '}
+  <RainText>unique</RainText>
   weather and notifying me when action needs to be taken. This is the first post
   in a series where I’ll walk you through how I'm building this personal garden
   maintenance app.
