@@ -1,0 +1,343 @@
+---
+title: 'Building Gieter: Part 2 — From Workflow to Web App'
+slug: 'gieter-from-workflow-to-web-app'
+pubDate: 2026-06-15T17:00:00Z
+description: 'In part 2, Gieter goes from a curl-triggered Worker to an actual web app. This post covers adding persistence with D1 and Drizzle, building a frontend with TanStack Start, and wiring up authentication with Better Auth'
+tags: []
+draft: false
+---
+
+import { Image } from 'astro:assets';
+
+import tasksTable from './assets/tasks-table.jpg';
+import plantsTable from './assets/plants-table.jpg';
+import importNewPlant from './assets/import-new-plant.jpg';
+import login from './assets/login.jpg';
+import importStatusTable from './assets/import-status-table.jpg';
+
+In [part 1](/posts/gieter-plant-importer/), I set up a Cloudflare Workflow that takes a plant name, searches the web with Tavily, and uses the Vercel AI SDK to generate a structured maintenance plan. The output was JSON. Useful as a proof of concept, but not something you can actually use.
+
+This post covers what came next: persisting that data in D1, building a (first version) frontend with TanStack Start , and locking it down with Better Auth.
+
+## D1 + Drizzle: Persisting the Plan
+
+### Schema Design
+
+D1 is Cloudflare's managed SQLite database. For the ORM layer I went with [Drizzle](https://orm.drizzle.team/), a TypeScript-first query builder that stays close to SQL. The schema lives in `src/db/schemas/` and maps closely to the `PlantCarePlan` output from the AI step.
+
+```typescript
+// src/db/schemas/plant.ts
+export const plants = sqliteTable('plants', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  type: text('type').notNull(),
+  status: text('status', { enum: ['draft', 'active'] })
+    .notNull()
+    .default('draft'),
+  sources: text('sources', { mode: 'json' })
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }),
+});
+
+export const tasks = sqliteTable('tasks', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  plantId: integer('plant_id')
+    .notNull()
+    .references(() => plants.id, { onDelete: 'cascade' }),
+  description: text('description').notNull(),
+  deadlineMonth: integer('deadline_month').notNull(),
+  deadlineDay: integer('deadline_day').notNull(),
+  products: text('products', { mode: 'json' })
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }),
+});
+```
+
+<Image class="rounded-xs border-4" src={plantsTable} alt="Plants table rows" />
+
+<Image class="rounded-xs border-4" src={tasksTable} alt="Tasks table rows" />
+
+There is also an `imports` table that tracks in-flight Workflow instances by storing the instance ID returned by `env.IMPORT_PLANT_WORKFLOW.create()`. This lets the frontend poll the status of ongoing imports.
+
+### Migrations
+
+[Drizzle Kit](https://orm.drizzle.team/docs/kit-overview) is a companion CLI tool that compares your TypeScript schema to the current database state and generates SQL migration files from the diff. From there, Wrangler applies those files to D1s.
+
+```bash
+pnpm db:generate     # drizzle-kit generate — diffs schema and writes SQL to migrations/
+pnpm migrate:local   # wrangler d1 migrations apply --local
+pnpm migrate:prod    # wrangler d1 migrations apply --remote
+```
+
+The D1 binding in `wrangler.jsonc`:
+
+```jsonc
+"d1_databases": [{
+  "binding": "DB",
+  "database_name": "gieter-db",
+  "database_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "migrations_dir": "migrations"
+}]
+```
+
+### Database Factory + Repository Pattern
+
+Each repository receives the raw `D1Database` binding from the Worker environment and passes it into a `createDb` factory:
+
+```typescript
+// src/db/index.ts
+export function createDb(d1: D1Database) {
+  return drizzle(d1, {
+    schema: { ...authSchema, ...plantSchema },
+  });
+}
+```
+
+```typescript
+// src/repositories/plant.repository.ts
+export class PlantRepository {
+  private db: ReturnType<typeof createDb>;
+
+  constructor(d1: D1Database) {
+    this.db = createDb(d1);
+  }
+
+  async insert(data: NewPlant) {
+    const [plant] = await this.db.insert(plants).values(data).returning();
+    return plant;
+  }
+}
+```
+
+### Step 4: Persisting the Plan
+
+Back in `ImportPlantWorkflow`, I added a fourth step that takes the generated plan and writes it to D1:
+
+```typescript
+await step.do('persist plant', async () => {
+  const plantRepository = new PlantRepository(env.DB);
+  const taskRepository = new TaskRepository(env.DB);
+
+  const plant = await plantRepository.insert({
+    name: plan.name,
+    type: plan.type,
+    sources: plan.sources,
+  });
+
+  await taskRepository.insertMany(
+    plan.tasks.map((task) => ({
+      plantId: plant.id,
+      description: task.description,
+      deadlineMonth: task.deadline.month,
+      deadlineDay: task.deadline.day,
+      products: task.products,
+    })),
+  );
+
+  return { plantId: plant.id };
+});
+```
+
+For now, the plant and task inserts run as two separate statements without transactional guarantees. Transactions in D1 are [currently not straightforward](https://github.com/cloudflare/workers-sdk/issues/2733) and Drizzle's `db.transaction()` [does not work with D1](https://github.com/drizzle-team/drizzle-orm/issues/2463) at the moment, so I skipped it for now. This is one of those things that feels natural in other stacks. In Spring for example, wrapping a method in `@Transactional` is all you need:
+
+```java
+@Transactional
+public Plant createFromImport(PlantCarePlan plan) {
+    Plant plant = plantRepository.save(...);
+    taskRepository.saveAll(plant.getId(), ...);
+    return plant;
+}
+```
+
+## Building the Frontend with TanStack Start
+
+With data flowing into D1, I needed a way to view and manage it. I chose [TanStack Start](https://tanstack.com/start/latest): a full-stack React framework powered by TanStack Router, providing server-side rendering, streaming, server functions, and more, all running on Cloudflare Workers.
+
+The entry point is minimal:
+
+```typescript
+// src/server.ts
+import handler from '@tanstack/react-start/server-entry';
+export { ImportPlantWorkflow } from './workflows/import-plant.ts';
+
+export default { fetch: handler.fetch };
+```
+
+The Workflow class is re-exported here so Wrangler can associate it with the binding declared in `wrangler.jsonc`. Everything else is handled by TanStack Start's server entry.
+
+### Server Functions
+
+`createServerFn` is how TanStack Start lets you define server-only logic that can be called directly from components or route loaders, as if it were a regular function. On the server, during SSR or in a route loader, the function executes directly. From the browser, the call becomes a `fetch` request to a generated RPC endpoint. You get end-to-end type safety without manually wiring up HTTP endpoints, routing, or serialization.
+
+```typescript
+// src/lib/plant.functions.ts
+export const importPlant = createServerFn({ method: 'POST' })
+  .validator(z.object({ plant: z.string() }))
+  .handler(async ({ data }) => {
+    await ensureSession();
+    const instance = await env.IMPORT_PLANT_WORKFLOW.create({
+      params: { plant: data.plant },
+    });
+    const importsRepository = new ImportRepository(env.DB);
+    await importsRepository.insert({ id: instance.id, plantName: data.plant });
+    return { instanceId: instance.id };
+  });
+```
+
+`.validator()` accepts a Zod schema and TanStack Start validates the input before the handler runs.
+
+From a React component, server functions pair naturally with TanStack Query. Triggering an import is just a mutation:
+
+```typescript
+const importPlantMutation = useMutation({
+  mutationFn: (name: string) => importPlant({ data: { plant: name } }),
+  onSuccess: () => {
+    toast.success(`Import started for "${name}".`);
+    void queryClient.invalidateQueries({ queryKey: importQueries.all() });
+  },
+});
+```
+
+<Image
+  class="mx-auto rounded-xs border-4 md:max-w-md"
+  src={importNewPlant}
+  alt="Dialog showing a form to import a new plant"
+/>
+
+### SSR + TanStack Query
+
+I'm using [TanStack Query](https://tanstack.com/query/latest) for all server state. The `QueryClient` is injected into the router context and `setupRouterSsrQueryIntegration` ensures that data fetched on the server is automatically streamed to the client, where it seeds the client-side cache.
+
+```typescript
+// src/router.tsx
+export function getRouter() {
+  const queryClient = new QueryClient();
+  const router = createRouter({
+    routeTree,
+    context: { queryClient },
+    defaultPreload: 'intent',
+    defaultPreloadStaleTime: 0,
+  });
+  setupRouterSsrQueryIntegration({ router, queryClient });
+  return router;
+}
+```
+
+Route loaders kick off fetches as early as possible by calling `context.queryClient.ensureQueryData()`. The loader's job is not to return data, it's to make sure the fetch has started before the component renders. When the component mounts, `useSuspenseQuery` either finds the data already in the cache or picks up the in-flight promise:
+
+```typescript
+// src/routes/_protected/plants/index.tsx
+export const Route = createFileRoute('/_protected/plants/')({
+  loader: ({ context }) => {
+    void context.queryClient.ensureQueryData(importQueries.statuses());
+  },
+  component: PlantsPage,
+});
+```
+
+```typescript
+const { data } = useSuspenseQuery(importQueries.statuses());
+```
+
+Since imports can take a while (the AI step isn't instant), the query polls while any workflow is still active:
+
+```typescript
+const { data } = useSuspenseQuery({
+  ...importQueries.statuses(),
+  refetchInterval: (query) => {
+    const hasActive = query.state.data?.some(
+      (s) => s.state === 'pending' || s.state === 'running',
+    );
+    return hasActive ? 3000 : false;
+  },
+});
+```
+
+Every 3 seconds, `getImportStatuses` runs on the server, checks each Workflow instance via `env.IMPORT_PLANT_WORKFLOW.get(id).status()`, and returns the result. Once all imports complete, polling stops.
+
+<Image
+  class="rounded-xs border-4"
+  src={importStatusTable}
+  alt="Login form with email and password fields"
+/>
+
+## Better Auth
+
+<Image
+  class="mx-auto rounded-xs border-4 md:max-w-md"
+  src={login}
+  alt="Login form with email and password fields"
+/>
+
+For authentication I'm using [Better Auth](https://www.better-auth.com/). It integrates directly with Drizzle via an adapter:
+
+```typescript
+// src/lib/auth.ts
+export const auth = betterAuth({
+  database: drizzleAdapter(createDb(env.DB), {
+    provider: 'sqlite',
+  }),
+  emailAndPassword: {
+    enabled: true,
+  },
+  plugins: [tanstackStartCookies()],
+});
+```
+
+Running `pnpm generate:auth` outputs the Drizzle schema file (user, session, account, verification tables), which then goes through the same `db:generate` + `migrate:local` flow as the rest of the schema.
+
+```typescript
+// sign in
+await authClient.signIn.email({ email, password });
+
+// sign out
+await authClient.signOut();
+```
+
+Reading the session in a server function makes it available anywhere on the server side, including route loaders:
+
+```typescript
+export const getSession = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const headers = getRequestHeaders();
+    return await auth.api.getSession({ headers });
+  },
+);
+```
+
+### Protecting Routes
+
+The route tree has a `_protected` layout that checks for a valid session before rendering any child route:
+
+```typescript
+// src/routes/_protected/route.tsx
+export const Route = createFileRoute('/_protected')({
+  beforeLoad: async () => {
+    const session = await getSession();
+    if (!session) throw redirect({ to: '/login' });
+    return { user: session.user };
+  },
+});
+```
+
+Any route nested under `/_protected/` (plants, tasks, settings) gets this guard automatically. The `user` object returned from `beforeLoad` flows down to child routes via `Route.useRouteContext()`.
+
+## A Few Other Things
+
+Cloudflare Workers have a [10 MB bundle size limit](https://developers.cloudflare.com/workers/platform/limits/#worker-size) after gzip. The Tavily SDK pushed past it. I replaced it with raw `fetch` calls to the Tavily REST API, with Zod schemas validating the responses. This also gave me a clean `SearchService` interface, making it straightforward to swap providers in the future.
+
+For the UI I'm using [Shadcn](https://ui.shadcn.com/), [Tailwind v4](https://tailwindcss.com/blog/tailwindcss-v4), and [Phosphor Icons](https://phosphoricons.com/). Solid choices that are quick to get productive with.
+
+## What's Next
+
+- **Task notifications** — alerting me when maintenance is due
+
+---
+
+_This is part 2 of the Building Gieter series. The source code is available on [GitHub](https://github.com/Jdruwe/gieter)._
