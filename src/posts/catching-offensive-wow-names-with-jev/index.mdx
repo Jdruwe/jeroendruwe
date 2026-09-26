@@ -1,0 +1,349 @@
+---
+title: 'Catching Offensive World of Warcraft Names with Jev'
+slug: 'catching-offensive-wow-names-with-jev'
+pubDate: 2026-09-26T17:00:00Z
+description: 'World of Warcraft: Forever splits character names into a main name and a secondary name, and offensive names slip through. I built a small name guard with Jev, a decision model on OpenRouter that returns probabilities instead of text, and measured how well it catches them.'
+tags: []
+draft: true
+---
+
+import { Image } from 'astro:assets';
+
+import wowFullName from './assets/wow-ui-fullname.webp';
+import cleanBillyThrallson from './assets/clean-billy-thrallson.png';
+import suspiciousHarryBalls from './assets/suspicious-harry-balls.png';
+import flaggedPeNis from './assets/flagged-pe-nis.png';
+
+import WowAlert from '../../post-helpers/catching-offensive-wow-names-with-jev/wow-alert.astro';
+import ItemLink from '../../post-helpers/catching-offensive-wow-names-with-jev/item-link.astro';
+import LoadingTip from '../../post-helpers/catching-offensive-wow-names-with-jev/loading-tip.astro';
+import Verdict from '../../post-helpers/catching-offensive-wow-names-with-jev/verdict.astro';
+import Achievement from '../../post-helpers/catching-offensive-wow-names-with-jev/achievement.astro';
+import Money from '../../post-helpers/catching-offensive-wow-names-with-jev/money.astro';
+import QuestComplete from '../../post-helpers/catching-offensive-wow-names-with-jev/quest-complete.astro';
+
+export const wowForever = {
+  name: 'World of Warcraft: Forever',
+  href: 'https://worldofwarcraft.blizzard.com/en-us/forever',
+  quality: 'legendary',
+  lines: [
+    'Classic+ realm',
+    'Beta: September 17, 2026',
+    'Available November 4, 2026',
+  ],
+  flavor: 'Name filter sold separately.',
+};
+
+export const jev = {
+  name: 'Jev',
+  href: 'https://openrouter.ai/docs/guides/community/jev-tutorial',
+  quality: 'epic',
+  lines: ['Decision model', 'typesafe/jev-1.13'],
+  effects: ['Use: Answers every question with a probability, never with text.'],
+  flavor: 'It is not an LLM.',
+};
+
+export const banhammer = {
+  name: 'Banhammer',
+  quality: 'epic',
+  lines: [['Two-Hand', 'Mace']],
+  effects: ['Chance on hit: Permanently renames the target.'],
+  flavor: 'Swung by moderators since 2004.',
+};
+
+export const nameGuard = {
+  name: 'Name Guard',
+  quality: 'rare',
+  lines: ['Unique-Equipped'],
+  effects: ['Equip: Turns three probabilities into a Verdict.'],
+  flavor: 'Does not check capitalization.',
+};
+
+export const generativeLlm = {
+  name: 'Generative LLM',
+  quality: 'common',
+  lines: ['Returns free-form text'],
+  flavor: 'Results may vary.',
+};
+
+<WowAlert>
+  This post contains offensive, sexual and racist example names, used only to
+  test the name guard. I do not endorse the views they reference.
+</WowAlert>
+
+<ItemLink {...wowForever} /> is Blizzard's new Classic+ server. The beta started
+on September 17, 2026 and the official launch is on November 4. One of the new
+things in Forever is how you name your character: instead of a single name, you
+pick a **main name** and a **secondary name**.
+
+It didn't take long before this screenshot was [shared on Reddit](https://www.reddit.com/r/classicwow/comments/1wpiqsb/wow_forever_senior_game_producer_says_to_not/):
+
+<Image
+  class="rounded-xs border-4"
+  src={wowFullName}
+  alt="The WoW: Forever Full Name panel with Billy as main name and Mcsuckmahbal as secondary name"
+/>
+
+The name filter let this one through. Two fields also give players a new trick: split a word across both fields and neither part looks bad on its own. "Pe" is fine. "Nis" is fine. "Pe Nis" is not.
+
+I wanted to see if AI could do better here, so I built a small proof of concept: a copy of the Forever name picker with a **Name Guard** behind it. The Name Guard only judges content (sexual, racist or otherwise offensive). It does not check WoW's formatting rules like capitalization or allowed characters. It is powered by a single call to Jev.
+
+## What is Jev?
+
+<ItemLink {...jev} /> is a decision model from TypeSafe, available on OpenRouter
+as `typesafe/jev-1.13`. It is not an LLM. It doesn't generate text. You send it
+a JSON `state` and a set of typed questions, and it answers each question with a
+probability:
+
+- **noul**: a yes/no question, returns the probability of yes (0 to 1)
+- **choice**: picks one option from a set you define, with a probability per option
+- **score**: places the input on an ordered scale you define, and returns a probability-weighted position on it
+
+## Asking the Questions
+
+The app is a React frontend served by Vite, with a small [Hono](https://hono.dev/) server that holds the OpenRouter key and talks to Jev:
+
+```d2
+vars: {
+  d2-config: {
+    sketch: true
+  }
+}
+
+shape: sequence_diagram
+
+browser: "Browser (React)"
+vite: "Vite dev server :5173"
+hono: "Hono API :3001"
+jev: "OpenRouter Decisions API (Jev)"
+
+browser -> vite: "POST /api/check (main + secondary name)"
+vite -> hono: "proxy /api/*"
+hono -> jev: "state + 3 questions (noul, choice, score)"
+jev -> hono: "probabilities + usage.cost" {style.stroke-dash: 3}
+hono -> hono: "decide() → Verdict"
+hono -> browser: "verdict, category, noul, severity" {style.stroke-dash: 3}
+```
+
+### The State
+
+Every check is one request to OpenRouter's decisions API. I call it with plain `fetch`, no SDK needed. The `state` describes the name in four ways:
+
+```typescript
+// server/jev.ts
+const joinedName = (mainName + secondaryName)
+  .toLowerCase()
+  .replace(/[^a-z0-9]/g, '');
+
+state: {
+  first_name: mainName,
+  surname: secondaryName,
+  full_name: `${mainName} ${secondaryName}`,
+  joined_name: joinedName,
+},
+```
+
+`joined_name` is the key to the split-name trick. "Pe" + "Nis" becomes `penis`, and the banned word is suddenly visible. That is the only preprocessing I do. There are no word lists, no leetspeak decoding and no regex filters. Recognizing "Sh1t" as "Shit" is left to Jev.
+
+### Field Names Are Part of the Prompt
+
+You might notice the keys say `first_name` and `surname`, while the rest of the code talks about main and secondary names. Originally they said `first_name` and `surname` because I didn't know yet what Forever called the fields. When I renamed everything to match the game, I also renamed the keys to `main_name` and `secondary_name`, reran my test names, and some verdicts changed.
+
+I ran both versions several times against the same names:
+
+| `state` keys                   | Kkk Master (noul)          | Mcsuck mahbal             | Gas Thejuice |
+| ------------------------------ | -------------------------- | ------------------------- | ------------ |
+| `first_name` / `surname`       | 0.88, 0.88, 0.88 (flagged) | 0.72 to 0.78 (flagged)    | 0.32 to 0.36 |
+| `main_name` / `secondary_name` | 0.52, 0.70, 0.48 (flips)   | 0.59 to 0.62 (suspicious) | 0.23 to 0.26 |
+
+Nothing else changed, only the key names. With `first_name` and `surname`, Jev was more confident and gave the same answer every run. With `main_name` and `secondary_name`, it was less sure and Kkk Master bounced between suspicious and flagged. My guess is that `first_name` / `surname` makes it obvious that this is a person's name, while "main name" is vague. I haven't proven that, but the lesson is clear:
+
+<LoadingTip>
+  `state` is not just data. The key names are part of the prompt, so treat them
+  the way you'd treat your instructions.
+</LoadingTip>
+
+### The Three Questions
+
+The first question is the main signal: does this name deserve the <ItemLink {...banhammer} />? A `noul` gives the probability of yes.
+
+```typescript
+inappropriate: {
+  type: 'noul',
+  instructions: `Does this character name contain content that would get it banned from a game? ${JUDGING_CONTEXT}`,
+  criteria: {
+    true: 'The name contains sexual content, racist content, slurs, profanity or other offensive material.',
+    false: 'The name is innocent and appropriate for a fantasy game.',
+  },
+},
+```
+
+The second question is a `choice` that explains _why_ a name is a problem.
+
+```typescript
+category: {
+  type: 'choice',
+  instructions: `What best describes this character name? ${JUDGING_CONTEXT}`,
+  criteria: {
+    clean: 'An innocent name appropriate for a fantasy game.',
+    sexual: 'The name references sexual acts, anatomy or innuendo.',
+    racist: 'The name contains racial or ethnic slurs, or racist references.',
+    offensive: 'The name contains other offensive content such as profanity, violence or real-world hate.',
+    inauthentic: 'The name itself is harmless but its spelling hides or imitates banned content, e.g. leetspeak or mangled casing.',
+  },
+},
+```
+
+The third question is a `score` on a three-step scale. The criteria array is ordered, so index 0 is the first entry. The result is a number between 0 and 2.
+
+```typescript
+severity: {
+  type: 'score',
+  instructions: `How severe is the content of this character name? ${JUDGING_CONTEXT}`,
+  criteria: [
+    'Perfectly fine as a character name',
+    'Borderline, a human moderator would squint at it',
+    'Clear ban-worthy violation',
+  ],
+},
+```
+
+### Repeating the Context
+
+Because the questions are answered in parallel and can't see each other, context can't be shared between them. Every question has to say what it needs to know itself. That's why each instruction ends with the same `JUDGING_CONTEXT`:
+
+```typescript
+// Questions in a Jev request are answered independently, so every question
+// must restate this context itself.
+const JUDGING_CONTEXT =
+  'The name was entered as two parts; also consider joined_name, which is both parts concatenated into one word, because banned words may only appear when the parts are joined. Judge the whole name, including words hidden by compound names, unusual casing or leetspellings.';
+```
+
+It feels repetitive, but it's the price of parallel questions. And since the instructions make up almost all the input tokens, it's also where most of the cost comes from (more on that below).
+
+## From Probabilities to a Verdict
+
+Jev gives me three answers. The <ItemLink {...nameGuard} /> turns them into one of three **Verdicts**: clean, suspicious or flagged. That decision lives in a small, pure function:
+
+```typescript
+// shared/verdict.ts
+export const THRESHOLDS = {
+  flagged: 0.7,
+  suspicious: 0.4,
+  severeBandStart: 1.5,
+} as const;
+
+export function decide(answers: JevAnswers): CheckResult {
+  const { noul } = answers.inappropriate;
+  const { score: severity } = answers.severity;
+
+  let verdict: Verdict;
+  if (noul >= THRESHOLDS.flagged) {
+    verdict = 'flagged';
+  } else if (
+    noul >= THRESHOLDS.suspicious ||
+    severity >= THRESHOLDS.severeBandStart
+  ) {
+    verdict = 'suspicious';
+  } else {
+    verdict = 'clean';
+  }
+
+  return { verdict, noul, category: answers.category.choice, severity };
+}
+```
+
+A few things to note:
+
+- `noul` decides almost everything. At 0.7 or above, the name is flagged.
+- Severity can only raise a clean name to suspicious. It can never flag a name on its own.
+- The category is **not used in the decision**. It's only there to explain the verdict.
+- Suspicious is the "a human should look at this" zone. A plain yes/no would force every borderline pun into one side or the other.
+
+## Results
+
+The dice button cycles through a set of example names. The first three show one verdict each:
+
+<Image
+  class="rounded-xs border-4"
+  src={cleanBillyThrallson}
+  alt="Billy Thrallson: clean verdict with the Detail Panel open"
+/>
+
+<Image
+  class="rounded-xs border-4"
+  src={suspiciousHarryBalls}
+  alt="Harry Balls: suspicious verdict with the Detail Panel open"
+/>
+
+<Image
+  class="rounded-xs border-4"
+  src={flaggedPeNis}
+  alt="Pe Nis: flagged verdict with the Detail Panel open"
+/>
+
+A small script (`npm run suite`) runs all example names against the live API and prints a table. `Expected` is the category I expected, not the verdict. Jev's answers vary a little between runs, so the numbers in the screenshots don't exactly match this run:
+
+| Full Name       | Label                               | Verdict                        | Category  | Noul | Severity | Expected    |
+| --------------- | ----------------------------------- | ------------------------------ | --------- | ---- | -------- | ----------- |
+| Billy Thrallson | a wholesome adventurer              | <Verdict value="clean" />      | clean     | 0.13 | 0.12     | clean       |
+| Harry Balls     | borderline pun                      | <Verdict value="suspicious" /> | sexual    | 0.63 | 1.04     | sexual      |
+| Pe Nis          | a compound split across both fields | <Verdict value="flagged" />    | sexual    | 0.96 | 1.95     | sexual      |
+| Jaina Proudmoor | a famous mage                       | <Verdict value="clean" />      | clean     | 0.04 | 0.01     | clean       |
+| Brom Beerbane   | a dwarven brewer                    | <Verdict value="clean" />      | clean     | 0.28 | 0.27     | clean       |
+| Mcsuck mahbal   | the name from the Reddit screenshot | <Verdict value="flagged" />    | offensive | 0.75 | 1.38     | sexual      |
+| Luv Gonads      | anatomy reference                   | <Verdict value="flagged" />    | sexual    | 0.89 | 1.50     | sexual      |
+| Kkk Master      | hate movement reference             | <Verdict value="flagged" />    | racist    | 0.87 | 1.70     | racist      |
+| Gas Thejuice    | racist dog whistle                  | <Verdict value="clean" />      | clean     | 0.34 | 0.48     | racist      |
+| Sh1t Lord       | leetspeak profanity                 | <Verdict value="flagged" />    | offensive | 0.95 | 1.74     | inauthentic |
+| Anita Bath      | borderline pun                      | <Verdict value="suspicious" /> | sexual    | 0.60 | 0.98     | sexual      |
+| Butthead Brewer | mild insult                         | <Verdict value="suspicious" /> | offensive | 0.53 | 0.86     | offensive   |
+| Xx Slayerxx     | harmless but tryhard                | <Verdict value="clean" />      | offensive | 0.17 | 0.61     | clean       |
+
+<Achievement title="Twelve out of Thirteen" points={10}>
+  12 out of 13 names end up where I'd want them.
+</Achievement>
+
+### Latency and Cost
+
+The suite also measures each call (network included, one call at a time):
+
+| Min    | Median | Mean   | Max    |
+| ------ | ------ | ------ | ------ |
+| 279 ms | 318 ms | 372 ms | 641 ms |
+
+Every check cost $0.000032, or about $32 per million checks. The price barely depends on the name, because the instructions and criteria make up almost all the input tokens. Some example volumes:
+
+| Name checks per day                            | Per day | Per month | Per year |
+| ---------------------------------------------- | ------- | --------- | -------- |
+| 100,000                                        | $3.21   | $96       | $1,171   |
+| 500,000 (100,000 new characters, 5 tries each) | $16.05  | $481      | $5,857   |
+| 1,000,000                                      | $32.09  | $963      | $11,713  |
+
+For a game the size of WoW, that is very cheap. If a dollar were a gold coin, a single check would cost less than <Money copper={1} />, and a million checks <Money gold={32} />.
+
+## Where It Falls Short
+
+### The Dog Whistle
+
+Gas Thejuice came back **clean**, in every run. It doesn't contain a banned word. It's a racist dog whistle that only works when you say it out loud: it sounds like "gas the Jews". Jev judges what's written, and nothing written here is offensive.
+
+One idea to catch these is a two-stage pipeline. First, ask a <ItemLink {...generativeLlm} /> what the name _sounds like_ and let it return a few readings. Then add those readings to the `state` as an extra field (say `sounds_like`) and let Jev judge them together with the name. That should catch a lot of these names, but it has a cost: a second model call, extra latency, and free-form text coming back into the pipeline, which is exactly what Jev let me avoid. I haven't built it yet.
+
+### Hand-Picked Thresholds
+
+The thresholds (0.7 and 0.4) are round numbers I picked by looking at 13 names. The Jev docs recommend choosing thresholds based on the cost of each kind of mistake, using labeled data. For a real game you'd want a much bigger set of names, including real names that were reported.
+
+### Accented Letters
+
+The regex that builds `joined_name` removes everything that isn't a to z or 0 to 9. That means "Pé" + "nis" becomes `pnis` instead of `penis`. Jev still sees the original parts, so it might catch it anyway, but I haven't tested that. Normalizing accents first (`.normalize('NFD')`) would fix it.
+
+<QuestComplete
+  title="Catching Offensive Names"
+  reward="wow-name-guard source code"
+  href="https://github.com/Jdruwe/wow-name-guard"
+  buttonLabel="view the source code on GitHub"
+  experience={1337}
+>
+  You made it to the end, champion. The source code is yours to claim.
+</QuestComplete>

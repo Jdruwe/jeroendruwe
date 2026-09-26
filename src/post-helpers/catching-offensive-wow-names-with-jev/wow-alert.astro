@@ -1,0 +1,204 @@
+---
+import './wow.css';
+
+interface Props {
+  /** Accessible name for the note, e.g. "Content note" */
+  label?: string;
+  /** Question shown above the buttons, like WoW's "Allow custom scripts?" */
+  question?: string;
+  /** Where "No" takes the reader */
+  noHref?: string;
+}
+
+const {
+  label = 'Content note',
+  question = 'Continue reading?',
+  noHref = '/',
+} = Astro.props;
+
+// "Yes" jumps just past the alert, straight into the post
+const continueId = 'wow-alert-continue';
+---
+
+<aside class="wow-alert not-prose" role="note" aria-label={label}>
+  <span class="wow-alert-stud top-left" aria-hidden="true"></span>
+  <span class="wow-alert-stud top-right" aria-hidden="true"></span>
+  <span class="wow-alert-stud bottom-left" aria-hidden="true"></span>
+  <span class="wow-alert-stud bottom-right" aria-hidden="true"></span>
+
+  <svg
+    class="wow-alert-icon"
+    viewBox="0 0 64 56"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <defs>
+      <linearGradient id="wow-alert-gold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffe066"></stop>
+        <stop offset="1" stop-color="#e8a200"></stop>
+      </linearGradient>
+    </defs>
+    <path
+      d="M32 3 L61 52 Q62 54 60 54 L4 54 Q2 54 3 52 Z"
+      fill="url(#wow-alert-gold)"
+      stroke="#3a2600"
+      stroke-width="3"
+      stroke-linejoin="round"></path>
+    <rect x="28.5" y="19" width="7" height="20" rx="2" fill="#1a1000"></rect>
+    <circle cx="32" cy="46" r="3.8" fill="#1a1000"></circle>
+  </svg>
+
+  <div class="wow-alert-body">
+    <div class="wow-alert-text"><slot /></div>
+    <p class="wow-alert-question">{question}</p>
+    <div class="wow-alert-buttons">
+      <a class="wow-button" href={`#${continueId}`}>Yes</a>
+      <a class="wow-button" href={noHref}>No</a>
+    </div>
+  </div>
+</aside>
+<div id={continueId} class="scroll-mt-32 xl:scroll-mt-20"></div>
+
+<style>
+  .wow-alert {
+    /* Bronze frame colours, outside in */
+    --frame-dark: #140c05;
+    --frame-light: #a67a4a;
+    --frame-mid: #4a2f17;
+    /* Frame is drawn with box-shadow rings inside the box */
+    --frame-width: 8px;
+    /* How far the corner studs poke out past the box (rounded up) */
+    --stud-overhang: 8px;
+
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    /* Leave room for the studs, so nothing sticks out of the text column */
+    width: calc(100% - 2 * var(--stud-overhang));
+    max-width: 36rem;
+    margin: 2rem auto 2.5rem;
+    padding: calc(1.25rem + var(--frame-width))
+      calc(1.5rem + var(--frame-width));
+
+    /* Always dark, like the in-game dialog, regardless of site theme */
+    color: #fff;
+    font-family: var(--wow-font);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    text-align: center;
+    text-shadow: 1px 1px 0 #000;
+
+    /* Near-black fill with a faint vertical grain */
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 0.012) 0 1px,
+        transparent 1px 3px
+      ),
+      rgb(10 9 8 / 0.95);
+
+    /*
+     * Square, striped bronze frame along the inside of the edge: dark, light,
+     * mid, light, dark. Each ring is drawn over the next one, so only its
+     * outer stripe shows. Then a dark glow inside the frame and a drop shadow.
+     */
+    box-shadow:
+      inset 0 0 0 1px var(--frame-dark),
+      inset 0 0 0 3px var(--frame-light),
+      inset 0 0 0 5px var(--frame-mid),
+      inset 0 0 0 7px var(--frame-light),
+      inset 0 0 0 var(--frame-width) var(--frame-dark),
+      inset 0 0 16px var(--frame-width) rgb(0 0 0 / 0.9),
+      0 10px 28px rgb(0 0 0 / 0.45);
+  }
+
+  /* Faceted bronze diamond on each corner of the frame */
+  .wow-alert-stud {
+    --size: 16px;
+    /* Centre the stud on the middle of the frame */
+    --offset: calc(var(--frame-width) / 2 - var(--size) / 2);
+
+    position: absolute;
+    width: var(--size);
+    height: var(--size);
+    transform: rotate(45deg);
+    border: 1px solid var(--frame-dark);
+    /* Four facets of a pyramid, lit from the top-left */
+    background: conic-gradient(
+      from -45deg,
+      #d8b27c 0 90deg,
+      #7d5530 90deg 180deg,
+      #4a2f16 180deg 270deg,
+      #f0cf9c 270deg 360deg
+    );
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+  }
+
+  .wow-alert-stud.top-left {
+    top: var(--offset);
+    left: var(--offset);
+  }
+
+  .wow-alert-stud.top-right {
+    top: var(--offset);
+    right: var(--offset);
+  }
+
+  .wow-alert-stud.bottom-left {
+    bottom: var(--offset);
+    left: var(--offset);
+  }
+
+  .wow-alert-stud.bottom-right {
+    right: var(--offset);
+    bottom: var(--offset);
+  }
+
+  .wow-alert-icon {
+    flex: none;
+    width: 3rem;
+    height: auto;
+    filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.7));
+  }
+
+  .wow-alert-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .wow-alert-text {
+    text-wrap: pretty;
+  }
+
+  /* MDX wraps multi-line content in <p>; keep it flowing inline */
+  .wow-alert-text > :global(p) {
+    display: inline;
+    margin: 0;
+  }
+
+  .wow-alert-question {
+    margin: 0.9rem 0 0;
+  }
+
+  .wow-alert-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.9rem;
+  }
+
+  @media (max-width: 480px) {
+    .wow-alert {
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: calc(1rem + var(--frame-width));
+    }
+
+    .wow-alert-buttons .wow-button {
+      min-width: 0;
+      flex: 1;
+    }
+  }
+</style>

@@ -1,0 +1,162 @@
+---
+import './wow.css';
+import ScrollTextIcon from '@lucide/astro/icons/scroll-text';
+
+/**
+ * A WoW "quest complete" frame on parchment: title, completion text, a reward
+ * item, experience and a Complete Quest button.
+ */
+interface Props {
+  title: string;
+  reward: string;
+  href: string;
+  /** Where the button goes, e.g. "view the source code on GitHub" */
+  buttonLabel: string;
+  experience?: number;
+}
+
+const { title, reward, href, buttonLabel, experience } = Astro.props;
+---
+
+<section class="quest not-prose" aria-label={`Quest complete: ${title}`}>
+  <p class="quest-kicker">Quest Complete</p>
+  <p class="quest-title">{title}</p>
+  <div class="quest-text"><slot /></div>
+
+  <p class="quest-heading">Rewards</p>
+  <p class="quest-small">You will receive:</p>
+  <div class="quest-reward">
+    <span class="quest-reward-icon" aria-hidden="true">
+      <ScrollTextIcon class="quest-reward-scroll" />
+    </span>
+    <span class="quest-reward-name">{reward}</span>
+  </div>
+  {
+    experience !== undefined && (
+      <p class="quest-small">
+        Experience: <strong>{experience.toLocaleString('en-US')}</strong>
+      </p>
+    )
+  }
+
+  <div class="quest-actions">
+    <a
+      class="wow-button"
+      href={href}
+      aria-label={`Complete Quest: ${buttonLabel}`}>Complete Quest</a
+    >
+  </div>
+</section>
+
+<style>
+  .quest {
+    margin: 3rem auto 1rem;
+    max-width: 34rem;
+    padding: 1.5rem 1.75rem 1.25rem;
+    color: #3b2410;
+    font-family: var(--wow-font);
+    line-height: 1.5;
+
+    /* Parchment with darker, burnt-looking edges */
+    background: radial-gradient(
+      ellipse at 50% 40%,
+      #f6e8c4 0%,
+      #ead3a0 55%,
+      #cfae70 100%
+    );
+    border: 2px solid #6b4a22;
+    border-radius: 4px;
+    box-shadow:
+      0 0 0 1px #1c1108,
+      inset 0 0 28px rgb(110 70 20 / 0.45),
+      0 10px 28px rgb(0 0 0 / 0.3);
+  }
+
+  .quest-kicker {
+    color: #7a5520;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .quest-title {
+    margin-top: 0.1rem;
+    color: #2a1606;
+    font-size: 1.5rem;
+    line-height: 1.25;
+  }
+
+  .quest-text {
+    margin-top: 0.75rem;
+    font-size: 1.05rem;
+  }
+
+  .quest-text > :global(p) {
+    margin: 0;
+  }
+
+  .quest-heading {
+    margin-top: 1.25rem;
+    padding-bottom: 0.2rem;
+    color: #2a1606;
+    font-size: 1.15rem;
+    border-bottom: 1px solid rgb(90 55 20 / 0.35);
+  }
+
+  .quest-small {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .quest-reward {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    max-width: 20rem;
+    padding: 0.3rem;
+    background: rgb(60 35 10 / 0.12);
+    border: 1px solid rgb(90 55 20 / 0.4);
+    border-radius: 4px;
+  }
+
+  .quest-reward-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    background: radial-gradient(circle at 50% 35%, #5a4424, #1a120a);
+    border: 2px solid #a8864a;
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px #000;
+  }
+
+  .quest-reward-icon :global(.quest-reward-scroll) {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #f0dca8;
+  }
+
+  .quest-reward-name {
+    color: #2a1606;
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+
+  .quest-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    .quest {
+      padding: 1.25rem;
+    }
+
+    .quest-actions .wow-button {
+      width: 100%;
+    }
+  }
+</style>

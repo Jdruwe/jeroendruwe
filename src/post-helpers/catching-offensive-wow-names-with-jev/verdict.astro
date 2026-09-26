@@ -1,0 +1,45 @@
+---
+/**
+ * A Name Guard verdict, coloured like the in-game messages in the screenshots:
+ * green "That name is yours to claim.", orange "Hmm... are you sure about that
+ * name?", red "You cannot use that name!".
+ */
+interface Props {
+  value: 'clean' | 'suspicious' | 'flagged';
+}
+
+const { value } = Astro.props;
+---
+
+<style>
+  .verdict {
+    font-weight: 600;
+  }
+
+  /* Darker shades on light backgrounds, in-game colours on dark */
+  .clean {
+    color: #178a00;
+  }
+
+  .suspicious {
+    color: #b85c00;
+  }
+
+  .flagged {
+    color: #c41414;
+  }
+
+  :global(.dark) .clean {
+    color: #3bd629;
+  }
+
+  :global(.dark) .suspicious {
+    color: #ff9a1f;
+  }
+
+  :global(.dark) .flagged {
+    color: #ff3b30;
+  }
+</style>
+
+<span class:list={['verdict', value]}>{value}</span>

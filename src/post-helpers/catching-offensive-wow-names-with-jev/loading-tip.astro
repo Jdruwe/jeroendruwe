@@ -1,0 +1,113 @@
+---
+import './wow.css';
+
+/**
+ * A WoW loading-screen tip: gold text on a dark band, with a loading bar that
+ * fills as it scrolls into view (in browsers that support scroll-driven
+ * animations; elsewhere the bar is simply full).
+ */
+---
+
+<aside class="loading-tip not-prose" role="note" aria-label="Tip">
+  <div class="loading-tip-text">
+    <span class="loading-tip-label">Tip:</span>
+    <slot />
+  </div>
+  <div class="loading-tip-bar" aria-hidden="true">
+    <div class="loading-tip-fill"></div>
+  </div>
+</aside>
+
+<style>
+  .loading-tip {
+    margin: 2rem 0;
+    padding: 1.1rem 12% 1rem;
+    color: var(--wow-gold);
+    font-family: var(--wow-font);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    text-align: center;
+    text-shadow: 1px 1px 0 #000;
+    /* Solid dark panel on light pages, like the other game UI boxes */
+    background: #0b0b0c;
+    border-radius: 6px;
+  }
+
+  /* On dark pages: a band that fades out at the sides, like the loading screen */
+  :global(.dark) .loading-tip {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(0 0 0 / 0.88) 14%,
+      rgb(0 0 0 / 0.88) 86%,
+      transparent
+    );
+    border-radius: 0;
+  }
+
+  .loading-tip-text {
+    text-wrap: balance;
+  }
+
+  /* MDX wraps multi-line content in <p>; keep it flowing inline */
+  .loading-tip-text > :global(p) {
+    display: inline;
+    margin: 0;
+  }
+
+  .loading-tip-label {
+    color: #fff;
+  }
+
+  .loading-tip-text :global(code) {
+    padding: 0 0.25em;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    text-shadow: none;
+    background: rgb(255 255 255 / 0.1);
+    border-radius: 3px;
+  }
+
+  .loading-tip-bar {
+    height: 10px;
+    margin: 0.9rem auto 0;
+    max-width: 22rem;
+    padding: 1px;
+    background: #120c05;
+    border: 1px solid #7a5a32;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px #000;
+  }
+
+  .loading-tip-fill {
+    height: 100%;
+    background: linear-gradient(#ffe07a, #e0a31a 55%, #9b6400);
+    transform-origin: left;
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .loading-tip-fill {
+        animation: loading-tip-fill linear both;
+        animation-timeline: view();
+        /* Empty when fully scrolled into view, full at the middle of the screen.
+           IntelliJ's CSS data is missing <timeline-range-name>, so it wrongly
+           rejects "entry"/"cover"; the values are valid and work in browsers. */
+        /*noinspection CssInvalidPropertyValue*/
+        animation-range-start: entry 100%;
+        /*noinspection CssInvalidPropertyValue*/
+        animation-range-end: cover 50%;
+      }
+    }
+  }
+
+  @keyframes loading-tip-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+</style>

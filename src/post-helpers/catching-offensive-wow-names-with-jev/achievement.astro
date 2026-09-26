@@ -1,0 +1,155 @@
+---
+import './wow.css';
+import TrophyIcon from '@lucide/astro/icons/trophy';
+
+/**
+ * A WoW "Achievement Earned" toast: icon, title, description and a points
+ * shield.
+ */
+interface Props {
+  title: string;
+  points?: number;
+}
+
+const { title, points = 10 } = Astro.props;
+---
+
+<aside
+  class="achievement not-prose"
+  role="note"
+  aria-label="Achievement earned"
+>
+  <span class="achievement-icon" aria-hidden="true">
+    <TrophyIcon class="achievement-trophy" />
+  </span>
+
+  <div class="achievement-body">
+    <p class="achievement-header">Achievement Earned</p>
+    <p class="achievement-title">{title}</p>
+    <div class="achievement-description"><slot /></div>
+  </div>
+
+  <span class="achievement-points" aria-label={`${points} points`}>
+    <svg viewBox="0 0 40 46" aria-hidden="true" focusable="false">
+      <path
+        d="M20 2 L37 8 V22 C37 33 29 40 20 44 C11 40 3 33 3 22 V8 Z"
+        fill="url(#achievement-shield)"
+        stroke="#3a2600"
+        stroke-width="2"></path>
+      <defs>
+        <linearGradient id="achievement-shield" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff0a8"></stop>
+          <stop offset="0.5" stop-color="#e0a820"></stop>
+          <stop offset="1" stop-color="#8a5a00"></stop>
+        </linearGradient>
+      </defs>
+    </svg>
+    <span class="achievement-points-value" aria-hidden="true">{points}</span>
+  </span>
+</aside>
+
+<style>
+  .achievement {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem auto;
+    max-width: 32rem;
+    padding: 0.75rem 1rem 0.75rem 0.75rem;
+    color: #fff;
+    font-family: var(--wow-font);
+    text-shadow: 1px 1px 0 #000;
+
+    /* Dark stone banner with a gold trim and a soft golden glow */
+    border: 2px solid transparent;
+    border-radius: 14px;
+    background:
+      linear-gradient(#2f271d, #15110c) padding-box,
+      linear-gradient(#ffe38a, #b07d1a 45%, #6b4a0c 60%, #e2b44a) border-box;
+    box-shadow:
+      0 0 0 1px #000,
+      inset 0 0 0 1px #000,
+      inset 0 0 14px rgb(0 0 0 / 0.8),
+      0 0 22px rgb(255 190 40 / 0.25);
+  }
+
+  .achievement-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    background: radial-gradient(circle at 50% 35%, #5a4424, #1a120a);
+    border: 2px solid #c9a24a;
+    border-radius: 6px;
+    box-shadow:
+      0 0 0 1px #000,
+      inset 0 0 8px rgb(0 0 0 / 0.8);
+  }
+
+  .achievement-icon :global(.achievement-trophy) {
+    width: 1.9rem;
+    height: 1.9rem;
+    color: var(--wow-gold);
+    filter: drop-shadow(0 1px 1px #000);
+  }
+
+  .achievement-body {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .achievement-body p {
+    margin: 0;
+  }
+
+  .achievement-header {
+    color: #e8dcc0;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .achievement-title {
+    color: var(--wow-gold);
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
+
+  .achievement-description > :global(p) {
+    margin: 0;
+  }
+
+  .achievement-description {
+    color: #fff;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .achievement-points {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+  }
+
+  .achievement-points svg {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.8));
+  }
+
+  .achievement-points-value {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    translate: -50% -50%;
+    color: #fff;
+    font-size: 0.95rem;
+    text-shadow:
+      1px 1px 0 #000,
+      0 0 3px #000;
+  }
+</style>
