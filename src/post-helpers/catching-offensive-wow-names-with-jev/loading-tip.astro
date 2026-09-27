@@ -33,15 +33,23 @@ import './wow.css';
     border-radius: 6px;
   }
 
-  /* On dark pages: a band that fades out at the sides, like the loading screen */
+  /*
+   * On dark pages the page is already near-black, so a dark band would just
+   * look like a hole. Instead: no fill, framed by thin gold lines above and
+   * below that fade out at the sides, like WoW's ornamental dividers.
+   */
   :global(.dark) .loading-tip {
-    background: linear-gradient(
+    --divider: linear-gradient(
       90deg,
       transparent,
-      rgb(0 0 0 / 0.88) 14%,
-      rgb(0 0 0 / 0.88) 86%,
+      rgb(255 209 0 / 0.55) 25%,
+      rgb(255 209 0 / 0.55) 75%,
       transparent
     );
+
+    background:
+      var(--divider) top / 100% 1px no-repeat,
+      var(--divider) bottom / 100% 1px no-repeat;
     border-radius: 0;
   }
 

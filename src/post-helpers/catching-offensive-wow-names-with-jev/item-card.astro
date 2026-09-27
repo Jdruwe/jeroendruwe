@@ -1,0 +1,37 @@
+---
+import ItemTooltip from './item-tooltip.astro';
+import type { ItemDetails } from './item-types';
+
+/**
+ * An item tooltip that's always visible, centred in the post, like hovering
+ * an item in your bags. Its price counts up when it scrolls into view.
+ */
+type Props = ItemDetails;
+---
+
+<style>
+  .item-card {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0 2rem;
+  }
+
+  /*
+   * Unlike a hover tooltip (max 20rem), the card has the column to itself:
+   * as wide as its longest line, up to the full column.
+   */
+  .item-card :global(.item-tooltip) {
+    max-width: 100%;
+  }
+
+  /* On phones, fill the column like the other blocks in the post */
+  @media (max-width: 640px) {
+    .item-card :global(.item-tooltip) {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="item-card not-prose">
+  <ItemTooltip countUpPrice {...Astro.props} />
+</div>

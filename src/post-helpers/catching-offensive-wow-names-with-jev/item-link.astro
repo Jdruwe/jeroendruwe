@@ -1,45 +1,18 @@
 ---
 import './wow.css';
+import ItemTooltip from './item-tooltip.astro';
+import type { ItemDetails } from './item-types';
 
 /**
  * A WoW chat-style item link: `[Item Name]` in its quality colour, with an
  * in-game style tooltip on hover or focus. Without `href` it renders as
  * focusable text instead of a link.
  */
-
-/** Item qualities; their colours are defined in the <style> block below */
-type Quality =
-  | 'poor'
-  | 'common'
-  | 'uncommon'
-  | 'rare'
-  | 'epic'
-  | 'legendary'
-  | 'artifact';
-
-/** A line of text, or a [left, right] pair like "Two-Hand ... Mace" */
-type TooltipLine = string | [string, string];
-
-interface Props {
-  name: string;
+interface Props extends ItemDetails {
   href?: string;
-  quality?: Quality;
-  /** White lines under the name, e.g. "Binds when picked up" */
-  lines?: TooltipLine[];
-  /** Green lines, e.g. "Use: ..." or "Equip: ..." */
-  effects?: string[];
-  /** Yellow, quoted flavour text at the bottom */
-  flavor?: string;
 }
 
-const {
-  name,
-  href,
-  quality = 'legendary',
-  lines = [],
-  effects = [],
-  flavor,
-} = Astro.props;
+const { href, quality = 'legendary', ...details } = Astro.props;
 
 const Tag = href ? 'a' : 'span';
 const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
@@ -109,48 +82,6 @@ const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
     display: inline;
   }
 
-  /*
-   * Quality colours: --quality is the in-game colour (used on dark pages and
-   * in the tooltip), --quality-light a darker shade that stays readable on
-   * white.
-   */
-
-  /* Legendary, also the default */
-  .item-link-wrapper {
-    --quality: #ff8000;
-    --quality-light: #b35900;
-  }
-
-  .item-link-wrapper[data-quality='poor'] {
-    --quality: #9d9d9d;
-    --quality-light: #6b6b6b;
-  }
-
-  .item-link-wrapper[data-quality='common'] {
-    --quality: #ffffff;
-    --quality-light: #3a3a3a;
-  }
-
-  .item-link-wrapper[data-quality='uncommon'] {
-    --quality: #1eff00;
-    --quality-light: #178a00;
-  }
-
-  .item-link-wrapper[data-quality='rare'] {
-    --quality: #0070dd;
-    --quality-light: #0058b0;
-  }
-
-  .item-link-wrapper[data-quality='epic'] {
-    --quality: #a335ee;
-    --quality-light: #7b2cbf;
-  }
-
-  .item-link-wrapper[data-quality='artifact'] {
-    --quality: #e6cc80;
-    --quality-light: #8a7433;
-  }
-
   .item-link {
     color: var(--quality-light);
     font-family: var(--wow-font);
@@ -179,8 +110,8 @@ const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
     outline: none;
   }
 
-  /* Classic WoW tooltip: dark navy fill, rounded grey border */
-  .item-tooltip {
+  /* Position the tooltip under the link (its look is in item-tooltip.astro) */
+  .item-link-wrapper :global(.item-tooltip) {
     --shift: 0px;
 
     position: absolute;
@@ -189,25 +120,6 @@ const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
        real layout position (not a transform), so the page never gets wider. */
     left: var(--shift);
     z-index: 30;
-    flex-direction: column;
-    gap: 0.1rem;
-    width: max-content;
-    max-width: min(20rem, calc(100vw - 16px));
-    padding: 0.5rem 0.7rem;
-    color: #fff;
-    font-family: var(--wow-font);
-    font-size: 0.875rem;
-    line-height: 1.35;
-    text-align: left;
-    white-space: normal;
-    text-shadow: 1px 1px 0 #000;
-    background: rgb(4 4 18 / 0.97);
-    border: 2px solid #9ea3ad;
-    border-radius: 5px;
-    box-shadow:
-      inset 0 0 0 1px #000,
-      0 0 0 1px #000,
-      0 6px 16px rgb(0 0 0 / 0.5);
 
     /*
      * Hidden until hover or focus. display: none (not just invisible) so a
@@ -225,9 +137,9 @@ const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
   }
 
   /* Links show it on keyboard focus; plain items also on tap/click */
-  .item-link-wrapper:hover .item-tooltip,
-  a.item-link:focus-visible + .item-tooltip,
-  span.item-link:focus + .item-tooltip {
+  .item-link-wrapper:hover :global(.item-tooltip),
+  a.item-link:focus-visible + :global(.item-tooltip),
+  span.item-link:focus + :global(.item-tooltip) {
     display: flex;
     opacity: 1;
     translate: 0 0;
@@ -235,64 +147,34 @@ const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
 
   /* Where the fade-in starts from when the tooltip appears */
   @starting-style {
-    .item-link-wrapper:hover .item-tooltip,
-    a.item-link:focus-visible + .item-tooltip,
-    span.item-link:focus + .item-tooltip {
+    .item-link-wrapper:hover :global(.item-tooltip),
+    a.item-link:focus-visible + :global(.item-tooltip),
+    span.item-link:focus + :global(.item-tooltip) {
       opacity: 0;
       translate: 0 -2px;
     }
   }
 
-  .item-tooltip-name {
-    color: var(--quality);
-    font-size: 1rem;
-  }
-
-  .item-tooltip-pair {
-    display: flex;
-    justify-content: space-between;
-    gap: 2rem;
-  }
-
-  .item-tooltip-effect {
-    color: #1eff00;
-  }
-
-  .item-tooltip-flavor {
-    color: #ffd100;
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .item-tooltip {
+    .item-link-wrapper :global(.item-tooltip) {
       transition: none;
     }
   }
 </style>
 
-<span class="item-link-wrapper not-prose" data-quality={quality}
+<span class="item-link-wrapper not-prose" data-item-quality={quality}
   ><Tag
     class="item-link"
     href={href}
     tabindex={href ? undefined : 0}
     aria-describedby={tooltipId}
-    ><span aria-hidden="true">[</span>{name}<span aria-hidden="true">]</span
+    ><span aria-hidden="true">[</span>{details.name}<span aria-hidden="true"
+      >]</span
     ></Tag
-  ><span class="item-tooltip" id={tooltipId} role="tooltip"
-    ><span class="item-tooltip-name">{name}</span>{
-      lines.map((line) =>
-        Array.isArray(line) ? (
-          <span class="item-tooltip-pair">
-            <>
-              <span>{line[0]}</span>
-              <span>{line[1]}</span>
-            </>
-          </span>
-        ) : (
-          <span>{line}</span>
-        ),
-      )
-    }{
-      effects.map((effect) => <span class="item-tooltip-effect">{effect}</span>)
-    }{flavor && <span class="item-tooltip-flavor">"{flavor}"</span>}</span
-  ></span
+  ><ItemTooltip
+    id={tooltipId}
+    role="tooltip"
+    quality={quality}
+    {...details}
+  /></span
 >

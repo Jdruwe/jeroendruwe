@@ -9,6 +9,46 @@
   --wow-gold: #ffd100;
 }
 
+/*
+ * Item quality colours, set with data-item-quality="epic" etc.
+ * --quality is the in-game colour (dark backgrounds, tooltips), --quality-light
+ * a darker shade that stays readable on white. Legendary is the default.
+ */
+[data-item-quality] {
+  --quality: #ff8000;
+  --quality-light: #b35900;
+}
+
+[data-item-quality='poor'] {
+  --quality: #9d9d9d;
+  --quality-light: #6b6b6b;
+}
+
+[data-item-quality='common'] {
+  --quality: #ffffff;
+  --quality-light: #3a3a3a;
+}
+
+[data-item-quality='uncommon'] {
+  --quality: #1eff00;
+  --quality-light: #178a00;
+}
+
+[data-item-quality='rare'] {
+  --quality: #0070dd;
+  --quality-light: #0058b0;
+}
+
+[data-item-quality='epic'] {
+  --quality: #a335ee;
+  --quality-light: #7b2cbf;
+}
+
+[data-item-quality='artifact'] {
+  --quality: #e6cc80;
+  --quality-light: #8a7433;
+}
+
 /* Red in-game button with a silver rim and gold text */
 .wow-button {
   display: inline-block;

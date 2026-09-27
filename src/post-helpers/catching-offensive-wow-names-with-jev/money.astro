@@ -2,23 +2,108 @@
 /**
  * An amount of in-game money, shown the WoW way: `32 (gold coin) 5 (silver
  * coin) 1 (copper coin)`. Parts that are zero are left out.
+ *
+ * With `countUp`, the amount counts up from 0 the first time it scrolls into
+ * view. The HTML always contains the final amount, so without JavaScript, for
+ * screen readers, and with "reduce motion" on, you simply see the result.
  */
 interface Props {
   gold?: number;
   silver?: number;
   copper?: number;
+  countUp?: boolean;
 }
 
-const { gold = 0, silver = 0, copper = 0 } = Astro.props;
+const { gold = 0, silver = 0, copper = 0, countUp = false } = Astro.props;
+
+/** How many copper one coin of each metal is worth */
+const COPPER_PER = { gold: 10000, silver: 100, copper: 1 } as const;
 
 const parts = [
-  { amount: gold, metal: 'gold' },
-  { amount: silver, metal: 'silver' },
-  { amount: copper, metal: 'copper' },
+  { amount: gold, metal: 'gold' as const },
+  { amount: silver, metal: 'silver' as const },
+  { amount: copper, metal: 'copper' as const },
 ].filter((part) => part.amount > 0);
 
 const label = parts.map((part) => `${part.amount} ${part.metal}`).join(' ');
 ---
+
+<script>
+  const DURATION = 2400;
+  // Starts fast and slows down a lot at the end, like coins settling: the
+  // last few silver tick by one at a time
+  const easeOut = (t: number) => 1 - (1 - t) ** 4;
+
+  /** Returns a function that shows an amount of copper in the coins shown */
+  function counter(money: HTMLElement) {
+    const parts = [...money.querySelectorAll<HTMLElement>('.money-amount')].map(
+      (el) => ({
+        el,
+        copperPer: Number(el.dataset.copperPer),
+        final: Number(el.dataset.final),
+      }),
+    );
+    const total = parts.reduce((sum, p) => sum + p.final * p.copperPer, 0);
+    // Count in steps of the smallest coin shown, so e.g. "32 gold 9 silver"
+    // never shows copper along the way
+    const step = parts.at(-1)?.copperPer ?? 1;
+
+    // Split the amount over the coins, biggest first
+    const show = (copper: number) => {
+      let rest = Math.round(copper / step) * step;
+      for (const part of parts) {
+        const amount = Math.floor(rest / part.copperPer);
+        rest -= amount * part.copperPer;
+        part.el.textContent = String(amount);
+      }
+    };
+
+    return { total, show };
+  }
+
+  function animate(money: HTMLElement) {
+    const { total, show } = counter(money);
+    const start = performance.now();
+
+    const frame = (now: number) => {
+      const t = Math.min((now - start) / DURATION, 1);
+      show(total * easeOut(t));
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        money.classList.add('money-done');
+      }
+    };
+    requestAnimationFrame(frame);
+  }
+
+  function setup() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          observer.unobserve(entry.target);
+          animate(entry.target as HTMLElement);
+        }
+      },
+      // Start once the whole amount is on screen
+      { threshold: 1 },
+    );
+
+    document
+      .querySelectorAll<HTMLElement>('.money[data-count-up]')
+      .forEach((money) => {
+        // Start from 0 right away, so nobody sees the final amount first
+        counter(money).show(0);
+        observer.observe(money);
+      });
+  }
+
+  // The site uses Astro's ClientRouter, which fires this on every page view
+  document.addEventListener('astro:page-load', setup);
+</script>
 
 <style>
   .money {
@@ -34,49 +119,97 @@ const label = parts.map((part) => `${part.amount} ${part.metal}`).join(' ');
     gap: 0.15em;
   }
 
+  /* Equal-width digits where the font has them, to keep counting steady */
+  .money-amount {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * A small coin seen at an angle, like in the game: slightly oval and tilted,
+   * lit from the lower left, with a raised rim and its edge showing at the top
+   * right. Each metal sets its own four tones.
+   */
   .coin {
     display: inline-block;
     width: 0.8em;
-    height: 0.8em;
+    height: 0.92em;
     border-radius: 50%;
+    rotate: 24deg;
+    background:
+      /* Faint hammered texture */
+      repeating-radial-gradient(
+        circle at 40% 60%,
+        rgb(255 255 255 / 0.12) 0 0.05em,
+        rgb(0 0 0 / 0.08) 0.05em 0.1em,
+        transparent 0.1em 0.16em
+      ),
+      /* Metal, brightest where the light hits */
+        radial-gradient(
+          ellipse at 34% 70%,
+          var(--coin-light) 0 6%,
+          var(--coin-mid) 50%,
+          var(--coin-dark) 100%
+        );
     box-shadow:
-      inset 0 -1px 1px rgb(0 0 0 / 0.35),
-      0 0 0 1px rgb(0 0 0 / 0.45);
+      /* Raised rim */
+      inset 0 0 0 0.07em var(--coin-dark),
+      inset -0.05em 0.05em 0.04em 0.07em rgb(255 255 255 / 0.18),
+      /* The coin's edge, seen because it's tilted */ 0.09em -0.05em 0
+        var(--coin-edge),
+      /* Dark outline, like the in-game icons */ 0 0 0 0.04em rgb(0 0 0 / 0.7),
+      0.09em -0.05em 0 0.04em rgb(0 0 0 / 0.7);
   }
 
   .gold {
-    background: radial-gradient(
-      circle at 35% 30%,
-      #fff5b8,
-      #f0c419 45%,
-      #9a6b00
-    );
+    --coin-light: #ffe88a;
+    --coin-mid: #e3b021;
+    --coin-dark: #8a5d04;
+    --coin-edge: #5c3d00;
   }
 
   .silver {
-    background: radial-gradient(
-      circle at 35% 30%,
-      #ffffff,
-      #c3c6cf 45%,
-      #6c707c
-    );
+    --coin-light: #dcdde2;
+    --coin-mid: #a3a4ab;
+    --coin-dark: #5b5c64;
+    --coin-edge: #3b3c43;
   }
 
   .copper {
-    background: radial-gradient(
-      circle at 35% 30%,
-      #ffd2ad,
-      #c8702f 45%,
-      #6f3610
-    );
+    --coin-light: #eab58a;
+    --coin-mid: #c96f33;
+    --coin-dark: #763511;
+    --coin-edge: #4a2008;
+  }
+
+  /* When counting finishes, the coins flash once, like loot landing */
+  .money-done .coin {
+    animation: coin-shine 600ms ease-out;
+  }
+
+  @keyframes coin-shine {
+    40% {
+      filter: brightness(1.8);
+      scale: 1.3;
+    }
   }
 </style>
 
-<span class="money" role="img" aria-label={label}>
+<span
+  class="money"
+  role="img"
+  aria-label={label}
+  data-count-up={countUp ? '' : undefined}
+>
   {
     parts.map((part) => (
       <span class="money-part">
-        {part.amount}
+        <span
+          class="money-amount"
+          data-final={part.amount}
+          data-copper-per={COPPER_PER[part.metal]}
+        >
+          {part.amount}
+        </span>
         <span class:list={['coin', part.metal]} />
       </span>
     ))
