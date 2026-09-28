@@ -8,7 +8,8 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@astrojs/react';
 
 import mdx from '@astrojs/mdx';
-import { remarkReadingTime } from './remark-reading-time.mjs';
+import { satteri } from '@astrojs/markdown-satteri';
+import { mdastReadingTimePlugin } from './src/mdast/mdast-reading-time';
 
 import expressiveCode from 'astro-expressive-code';
 
@@ -46,6 +47,8 @@ export default defineConfig({
     }),
   ],
   markdown: {
-    remarkPlugins: [remarkReadingTime],
+    processor: satteri({
+      mdastPlugins: [mdastReadingTimePlugin],
+    }),
   },
 });
