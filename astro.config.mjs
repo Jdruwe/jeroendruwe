@@ -25,6 +25,21 @@ export default defineConfig({
   }),
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // lightningcss (Vite 8's default CSS minifier) merges animation-timeline
+      // into the `animation` shorthand during build, e.g.
+      //   animation: linear both loading-tip-fill view()
+      // Browsers reject that since animation-timeline is not part of the
+      // shorthand grammar, so the scroll-driven loading bar in
+      // src/post-helpers/catching-offensive-wow-names-with-jev/loading-tip.astro
+      // silently breaks in production while working in dev. esbuild's minifier
+      // leaves these declarations as written.
+      // Tracked upstream, with the workaround blessed by Astro's maintainers:
+      // https://github.com/parcel-bundler/lightningcss/issues/1342
+      // https://github.com/withastro/astro/issues/17940
+      // Remove once the lightningcss issue is fixed.
+      cssMinify: 'esbuild',
+    },
   },
   integrations: [
     react(),
