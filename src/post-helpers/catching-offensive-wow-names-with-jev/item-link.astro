@@ -5,8 +5,9 @@ import type { ItemDetails } from './item-types';
 
 /**
  * A WoW chat-style item link: `[Item Name]` in its quality colour, with an
- * in-game style tooltip on hover or focus. Without `href` it renders as
- * focusable text instead of a link.
+ * in-game style tooltip on hover, focus or tap. The name itself never
+ * navigates: when the item has an `href`, the tooltip ends in a small
+ * footer link to it, so reading the tooltip costs you no click.
  */
 interface Props extends ItemDetails {
   href?: string;
@@ -14,7 +15,6 @@ interface Props extends ItemDetails {
 
 const { href, quality = 'legendary', ...details } = Astro.props;
 
-const Tag = href ? 'a' : 'span';
 const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
 
 // The markup below has no whitespace between tags on purpose: whitespace would
@@ -95,19 +95,10 @@ const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
     color: var(--quality);
   }
 
-  a.item-link:hover {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
   .item-link:focus-visible {
     outline: 2px solid var(--quality);
     outline-offset: 2px;
     border-radius: 2px;
-  }
-
-  span.item-link:focus {
-    outline: none;
   }
 
   /* Position the tooltip under the link (its look is in item-tooltip.astro) */
@@ -134,22 +125,33 @@ const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
       translate 120ms,
       display 120ms allow-discrete;
     pointer-events: none;
+
+    /* Invisible bridge over the 6px gap, so moving the cursor from the link
+       down into the tooltip doesn't drop :hover and close it mid-move. */
+    ::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 0;
+      right: 0;
+      height: 8px;
+    }
   }
 
-  /* Links show it on keyboard focus; plain items also on tap/click */
+  /* Shown on hover, or when anything inside the wrapper (link or the tooltip's
+     "Use" link) has keyboard focus */
   .item-link-wrapper:hover :global(.item-tooltip),
-  a.item-link:focus-visible + :global(.item-tooltip),
-  span.item-link:focus + :global(.item-tooltip) {
+  .item-link-wrapper:focus-within :global(.item-tooltip) {
     display: flex;
     opacity: 1;
     translate: 0 0;
+    pointer-events: auto;
   }
 
   /* Where the fade-in starts from when the tooltip appears */
   @starting-style {
     .item-link-wrapper:hover :global(.item-tooltip),
-    a.item-link:focus-visible + :global(.item-tooltip),
-    span.item-link:focus + :global(.item-tooltip) {
+    .item-link-wrapper:focus-within :global(.item-tooltip) {
       opacity: 0;
       translate: 0 -2px;
     }
@@ -163,18 +165,15 @@ const tooltipId = `item-tooltip-${crypto.randomUUID().slice(0, 8)}`;
 </style>
 
 <span class="item-link-wrapper not-prose" data-item-quality={quality}
-  ><Tag
-    class="item-link"
-    href={href}
-    tabindex={href ? undefined : 0}
-    aria-describedby={tooltipId}
+  ><span class="item-link" tabindex={0} aria-describedby={tooltipId}
     ><span aria-hidden="true">[</span>{details.name}<span aria-hidden="true"
       >]</span
-    ></Tag
+    ></span
   ><ItemTooltip
     id={tooltipId}
     role="tooltip"
     quality={quality}
+    href={href}
     {...details}
   /></span
 >

@@ -7,12 +7,16 @@ import type { ItemDetails } from './item-types';
 /**
  * The WoW item tooltip box itself: name in its quality colour, white lines,
  * green effects, yellow flavour text and an optional price in coins.
+ * With `href`, shows a small footer link labelled `linkLabel`.
  * Used by ItemLink (on hover) and ItemCard (always visible).
  */
 interface Props extends ItemDetails {
   id?: string;
   role?: HTMLAttributes<'span'>['role'];
   class?: string;
+  href?: string;
+  /** Text in front of the link, "Visit" by default */
+  linkLabel?: string;
 }
 
 const {
@@ -24,6 +28,8 @@ const {
   price,
   priceLabel = 'Sell Price',
   countUpPrice = false,
+  href,
+  linkLabel = 'Visit',
   id,
   role,
   class: className,
@@ -74,6 +80,35 @@ const {
     color: #ffd100;
   }
 
+  /* Footer link out of the tooltip, kept apart from the effects above it:
+     neutral white with an arrow, not another green "Use:" line */
+  .item-tooltip-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-top: 0.6rem;
+    color: #fff;
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+
+  .item-tooltip-link .arrow {
+    font-size: 1.1em;
+    line-height: 1;
+  }
+
+  .item-tooltip-link:hover,
+  .item-tooltip-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .item-tooltip-link:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   .item-tooltip-price {
     display: flex;
     align-items: center;
@@ -104,6 +139,12 @@ const {
     )
   }{effects.map((effect) => <span class="item-tooltip-effect">{effect}</span>)}{
     flavor && <span class="item-tooltip-flavor">"{flavor}"</span>
+  }{
+    href && (
+      <a class="item-tooltip-link" href={href}>
+        {linkLabel}<span class="arrow" aria-hidden="true">↗</span>
+      </a>
+    )
   }{
     price && (
       <span class="item-tooltip-price">
